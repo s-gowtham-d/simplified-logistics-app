@@ -21,23 +21,19 @@ class Booking(models.Model):
         ('helper', 'With Helper'),
     ]
     
-    # Relationships
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')
     driver = models.ForeignKey('vehicles.Driver', on_delete=models.SET_NULL, null=True, blank=True, related_name='bookings')
     vehicle = models.ForeignKey('vehicles.Vehicle', on_delete=models.SET_NULL, null=True, blank=True)
     
-    # Booking details
     booking_type = models.CharField(max_length=20, choices=BOOKING_TYPE_CHOICES, default='economy')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
-    # Pickup location
     pickup_address = models.TextField()
     pickup_lat = models.DecimalField(max_digits=9, decimal_places=6)
     pickup_lng = models.DecimalField(max_digits=9, decimal_places=6)
     pickup_contact_name = models.CharField(max_length=100)
     pickup_contact_phone = models.CharField(max_length=15)
     
-    # Dropoff location
     dropoff_address = models.TextField()
     dropoff_lat = models.DecimalField(max_digits=9, decimal_places=6)
     dropoff_lng = models.DecimalField(max_digits=9, decimal_places=6)
