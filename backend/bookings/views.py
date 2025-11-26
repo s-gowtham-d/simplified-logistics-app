@@ -9,10 +9,14 @@ from .serializers import (
     BookingSerializer, 
     BookingCreateSerializer,
     QuoteRequestSerializer,
+    QuoteResponseSerializer,
+    ProofMediaSerializer
 )
 from vehicles.models import Vehicle, Driver
 import random
 import uuid
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 class BookingViewSet(viewsets.ModelViewSet):
     """ViewSet for Booking model"""
@@ -278,3 +282,59 @@ class BookingViewSet(viewsets.ModelViewSet):
         driver.rating = round(new_average, 2)
         driver.total_trips += 1
         driver.save()
+        
+class ProofMediaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for ProofMedia model
+    Differentiated Feature: Live Proof System
+    """
+    
+    serializer_class = ProofMediaSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def get_queryset(self):
+    # Users can only see proof for their own bookings
+        return ProofMedia.objects.filter(booking__user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        """Upload proof media (photo/video)"""
+        booking_id = request.data.get('booking_id')
+        
+        if not booking_id:
+            return Response({
+                'error': 'booking_id is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verify booking belongs to user
+        booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+        
+        # Create proof media
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        proof = serializer.save(booking=booking)
+        
+        return Response(
+            ProofMediaSerializer(proof).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=False, methods=['get'])
+    def by_booking(self, request):
+        """Get all proof media for a booking"""
+        booking_id = request.query_params.get('booking_id')
+        
+        if not booking_id:
+            return Response({
+                'error': 'booking_id parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verify booking belongs to user
+        booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+        
+        proof_media = ProofMedia.objects.filter(booking=booking).order_by('uploaded_at')
+        
+        return Response({
+            'booking_id': booking_id,
+            'proof_media': ProofMediaSerializer(proof_media, many=True).data
+        })
