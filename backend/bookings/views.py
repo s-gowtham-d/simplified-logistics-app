@@ -1,8 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action 
 from rest_framework.response import Response
-from .models import Booking, Vehicle
-from .serializers import BookingSerializer, VehicleSerializer
+from .serializers import BookingSerializer
+from .models import Booking
+from vehicles.models import Vehicle
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -37,6 +38,3 @@ class BookingViewSet(viewsets.ModelViewSet):
             'total_price': round(total, 2)
         })
         
-class VehicleViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Vehicle.objects.all()
-    serializer_class = VehicleSerializer
