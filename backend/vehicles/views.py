@@ -5,10 +5,16 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Vehicle, Driver
 from .serializers import VehicleSerializer, DriverSerializer
 from decimal import Decimal
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 class VehicleViewSet(viewsets.ReadOnlyModelViewSet):
-    """ViewSet for Vehicle model - read only"""
+    """
+    ViewSet for Vehicle model
     
+    list: Get all available vehicles
+    retrieve: Get details of a specific vehicle
+    """    
     queryset = Vehicle.objects.filter(is_available=True)
     serializer_class = VehicleSerializer
     permission_classes = [AllowAny]
@@ -25,6 +31,64 @@ class VehicleViewSet(viewsets.ReadOnlyModelViewSet):
         
         return queryset
     
+    @swagger_auto_schema(
+        operation_description="""
+        Equipment Utilization Calculator - Differentiated Feature
+        
+        Suggests the right vehicle based on:
+        - Item weight (kg)
+        - Item dimensions (LxWxH in feet)
+        - Item description
+        
+        Returns recommended vehicle with utilization percentage (60-90% is optimal)
+        """,
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'weight_kg': openapi.Schema(
+                    type=openapi.TYPE_NUMBER,
+                    description='Weight of items in kilograms',
+                    example=500
+                ),
+                'dimensions': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='Dimensions in format: LxWxH feet',
+                    example='6x4x4'
+                ),
+                'item_description': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='Description of items to transport',
+                    example='Furniture and appliances'
+                ),
+            }
+        ),
+        responses={
+            200: openapi.Response(
+                description="Vehicle recommendation calculated",
+                examples={
+                    "application/json": {
+                        "recommended_vehicle": {
+                            "vehicle": {
+                                "id": 2,
+                                "vehicle_type": "mini_truck",
+                                "vehicle_name": "Tata Ace",
+                                "capacity_kg": 750
+                            },
+                            "utilization_percentage": 76.25,
+                            "weight_utilization": 66.67,
+                            "recommended": True
+                        },
+                        "all_suitable_vehicles": [],
+                        "input": {
+                            "weight_kg": 500,
+                            "dimensions": "6x4x4",
+                            "volume_cubic_feet": 96.0
+                        }
+                    }
+                }
+            )
+        }
+    )
     @action(detail=False, methods=['post'])
     def calculate_vehicle(self, request):
         """

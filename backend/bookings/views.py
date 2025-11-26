@@ -16,15 +16,29 @@ from vehicles.models import Vehicle, Driver
 import random
 import uuid
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 class BookingViewSet(viewsets.ModelViewSet):
-    """ViewSet for Booking model"""
+    """
+    ViewSet for managing bookings
+    
+    list: Get all bookings for the authenticated user
+    create: Create a new booking
+    retrieve: Get details of a specific booking
+    update: Update a booking
+    destroy: Delete a booking
+    """
     
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         # Users can only see their own bookings
+        if getattr(self, 'swagger_fake_view', False):
+            return Booking.objects.none()
+
+        if not self.request.user.is_authenticated:
+            return Booking.objects.none()
         return Booking.objects.filter(user=self.request.user).order_by('-created_at')
     
     def get_serializer_class(self):
@@ -101,6 +115,69 @@ class BookingViewSet(viewsets.ModelViewSet):
         
         return Response(response_data)
     
+    @swagger_auto_schema(
+        operation_description="Get price quotes for all booking types (Fast, Economy, Helper)",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['vehicle_type', 'distance_km'],
+            properties={
+                'vehicle_type': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    enum=['bike', 'mini_truck', 'truck', 'tempo'],
+                    description='Type of vehicle needed'
+                ),
+                'distance_km': openapi.Schema(
+                    type=openapi.TYPE_NUMBER,
+                    description='Distance in kilometers'
+                ),
+                'is_green_fleet': openapi.Schema(
+                    type=openapi.TYPE_BOOLEAN,
+                    description='Request electric vehicle (5% discount)'
+                ),
+            }
+        ),
+        responses={
+            200: openapi.Response(
+                description="Quote calculated successfully",
+                examples={
+                    "application/json": {
+                        "vehicle": {
+                            "type": "mini_truck",
+                            "name": "Tata Ace",
+                            "is_electric": False
+                        },
+                        "quotes": [
+                            {
+                                "type": "economy",
+                                "label": "Economy",
+                                "description": "Standard delivery at best price",
+                                "price": 270.0,
+                                "duration_mins": 36,
+                                "features": ["Standard delivery", "Best price", "Reliable service"]
+                            },
+                            {
+                                "type": "fast",
+                                "label": "Fast",
+                                "description": "Priority delivery - 20% faster",
+                                "price": 405.0,
+                                "duration_mins": 28,
+                                "features": ["Priority pickup", "Faster delivery", "Real-time tracking"]
+                            },
+                            {
+                                "type": "helper",
+                                "label": "Helper",
+                                "description": "Includes loading/unloading helper",
+                                "price": 351.0,
+                                "duration_mins": 36,
+                                "features": ["Loading assistance", "Unloading assistance", "Safe handling"]
+                            }
+                        ]
+                    }
+                }
+            ),
+            400: "Bad Request - Invalid vehicle type or missing parameters"
+        }
+    )
     @action(detail=False, methods=['post'])
     def get_all_quotes(self, request):
         """
@@ -222,6 +299,13 @@ class BookingViewSet(viewsets.ModelViewSet):
             booking.status = 'driver_assigned'
             booking.save()
     
+    @swagger_auto_schema(
+        operation_description="Cancel a booking. Only pending/confirmed bookings can be cancelled.",
+        responses={
+            200: "Booking cancelled successfully",
+            400: "Cannot cancel booking in current status"
+        }
+    )
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         """Cancel a booking"""
@@ -240,6 +324,29 @@ class BookingViewSet(viewsets.ModelViewSet):
             'booking': BookingSerializer(booking).data
         })
     
+    @swagger_auto_schema(
+        operation_description="Rate a completed booking (1-5 stars)",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['rating'],
+            properties={
+                'rating': openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description='Rating from 1 to 5',
+                    minimum=1,
+                    maximum=5
+                ),
+                'feedback': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='Optional feedback text'
+                ),
+            }
+        ),
+        responses={
+            200: "Rating submitted successfully",
+            400: "Invalid rating or booking not completed"
+        }
+    )
     @action(detail=True, methods=['post'])
     def rate(self, request, pk=None):
         """Rate a completed booking"""
@@ -295,6 +402,13 @@ class ProofMediaViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
     # Users can only see proof for their own bookings
+        # Skip filtering during Swagger schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return ProofMedia.objects.none()
+        # Prevent AnonymousUser crash
+        if not self.request.user.is_authenticated:
+         return ProofMedia.objects.none()
+    
         return ProofMedia.objects.filter(booking__user=self.request.user)
 
     def create(self, request, *args, **kwargs):

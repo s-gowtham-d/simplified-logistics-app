@@ -6,3 +6,5 @@ psycopg2-binary
 djangorestframework-simplejwt
 python-decouple 
 python-dateutil
+requests
+drf-yasg

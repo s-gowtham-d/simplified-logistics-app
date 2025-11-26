@@ -20,6 +20,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Payment.objects.none()
+
+        if not self.request.user.is_authenticated:
+            return Payment.objects.none()
+        
         return Payment.objects.filter(user=self.request.user).order_by('-created_at')
     
     @action(detail=False, methods=['post'])

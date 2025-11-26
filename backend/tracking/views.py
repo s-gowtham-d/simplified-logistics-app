@@ -16,6 +16,11 @@ class TrackingLogViewSet(viewsets.ModelViewSet):
     serializer_class = TrackingLogSerializer
     
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return TrackingLog.objects.none()
+
+        if not self.request.user.is_authenticated:
+            return TrackingLog.objects.none()
         return TrackingLog.objects.filter(booking__user=self.request.user)
     
     @action(detail=False, methods=['get'])

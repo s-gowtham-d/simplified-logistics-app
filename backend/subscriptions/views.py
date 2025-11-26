@@ -8,11 +8,16 @@ from dateutil.relativedelta import relativedelta
 from .models import SubscriptionPlan, Subscription
 from .serializers import SubscriptionPlanSerializer, SubscriptionSerializer
 from bookings.models import Booking
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet for SubscriptionPlan model
-    Differentiated Feature: Business Subscriptions
+    ViewSet for Business Subscriptions - Differentiated Feature
+    
+    list: Get user's subscription history
+    create: Subscribe to a plan
+    retrieve: Get subscription details
     """
     
     queryset = SubscriptionPlan.objects.filter(is_active=True)
@@ -27,6 +32,12 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
     
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Subscription.objects.none()
+
+        if not self.request.user.is_authenticated:
+            return Subscription.objects.none()
+    
         return Subscription.objects.filter(user=self.request.user).order_by('-created_at')
     
     def create(self, request, *args, **kwargs):
@@ -122,7 +133,53 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             'message': 'Subscription cancelled successfully',
             'subscription': SubscriptionSerializer(subscription).data
         })
-    
+        
+    @swagger_auto_schema(
+        operation_description="""
+        Get Business Analytics - Differentiated Feature
+        
+        Available only for users with active subscriptions.
+        Provides insights on:
+        - Booking statistics
+        - Spending patterns
+        - Vehicle usage breakdown
+        - Service type preferences
+        - Average ratings
+        """,
+        responses={
+            200: openapi.Response(
+                description="Analytics data",
+                examples={
+                    "application/json": {
+                        "subscription": {
+                            "plan": "Pro Quarterly",
+                            "bookings_used": 12,
+                            "bookings_remaining": 23,
+                            "period": "2024-01-01 to 2024-04-01"
+                        },
+                        "analytics": {
+                            "total_bookings": 12,
+                            "completed_bookings": 10,
+                            "cancelled_bookings": 2,
+                            "total_spent": 3450.50,
+                            "average_rating": 4.5,
+                            "vehicle_type_breakdown": {
+                                "mini_truck": 7,
+                                "bike": 3,
+                                "truck": 2
+                            },
+                            "booking_type_breakdown": {
+                                "economy": 8,
+                                "fast": 3,
+                                "helper": 1
+                            }
+                        }
+                    }
+                }
+            ),
+            403: "Analytics only available for subscription users"
+        }
+    )
     @action(detail=False, methods=['get'])
     def analytics(self, request):
         """

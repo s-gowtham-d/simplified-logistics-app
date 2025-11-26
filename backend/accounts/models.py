@@ -20,6 +20,7 @@ class User(AbstractUser):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    gst_number = models.CharField(max_length=50, blank=True, null=True)
     
     def __str__(self):
         return f"{self.username} ({self.phone_number})"

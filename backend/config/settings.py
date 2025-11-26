@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework',
     'corsheaders',
+    'drf_yasg', 
     
     'accounts',
     'vehicles',
@@ -61,6 +62,25 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# SWAGGER_SETTINGS = {
+#     'SECURITY_DEFINITIONS': {
+#         'Bearer': {
+#             'type': 'apiKey',
+#             'name': 'Authorization',
+#             'in': 'header'
+#         }
+#     },
+#     'USE_SESSION_AUTH': False,
+#     'JSON_EDITOR': True,
+#     'SUPPORTED_SUBMIT_METHODS': [
+#         'get',
+#         'post',
+#         'put',
+#         'delete',
+#         'patch'
+#     ],
+# }
 
 ROOT_URLCONF = 'config.urls'
 
@@ -168,3 +188,26 @@ SIMPLE_JWT = {
 
 
 AUTH_USER_MODEL = 'accounts.User'
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+    'SUPPORTED_SUBMIT_METHODS': [
+        'get',
+        'post',
+        'put',
+        'delete',
+        'patch'
+    ],
+}
+
+REDOC_SETTINGS = {
+    'LAZY_RENDERING': True,
+}
