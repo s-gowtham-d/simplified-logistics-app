@@ -1,25 +1,6 @@
 from django.db import models
-from accounts import User
-
-class Vehicle(models.Model):
-    VEHICLE_TYPES =[
-        ('bike','Bike'),
-        ('mini_truck','Mini Truck'),
-        ('truck','Truck'),
-        ('temp', 'Tempo')
-    ]
-    vehicle_type = models.CharField(max_length=20, choices=VEHICLE_TYPES)
-    vehicle_number = models.CharField(max_length=20, unique=True)
-    capacity_kg = models.IntegerField()
-    dimensions = models.CharField(max_length=100)  # e.g., "4x6x4 feet"
-    base_price = models.DecimalField(max_digits=10, decimal_places=2)
-    per_km_price = models.DecimalField(max_digits=10, decimal_places=2)
-    is_electric = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"{self.vehicle_number} - {self.vehicle_number}"
-    
+from django.conf import settings
+  
 class Booking(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -35,7 +16,7 @@ class Booking(models.Model):
         ('helper', 'With Helper')
     ]
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True)
     pickup_address = models.CharField(max_length=255)
     pickup_lat = models.DecimalField(max_digits=9, decimal_places=6)
