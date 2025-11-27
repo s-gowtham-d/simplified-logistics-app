@@ -47,10 +47,10 @@ export default function HistoryScreen() {
             const response = await bookingsAPI.getAll();
             // Filter completed and cancelled bookings
             console.log("History", response.data)
-            const historyBookings = response.data.results.filter(
-                (b: any) => ['completed', 'cancelled'].includes(b.status)
-            );
-            setBookings(historyBookings);
+            // const historyBookings = response.data.results.filter(
+            //     (b: any) => ['completed', 'cancelled'].includes(b.status)
+            // );
+            setBookings(response.data.results);
         } catch (error) {
             console.error('Error fetching bookings:', error);
             Alert.alert('Error', 'Failed to load booking history');
@@ -199,7 +199,7 @@ function HistoryBookingCard({ booking, onPress }: { booking: any; onPress: () =>
                                     className="ml-3"
                                 >
                                     <Text className="text-white text-xs font-semibold">
-                                        {isCompleted ? 'COMPLETED' : 'CANCELLED'}
+                                        {booking.status.toUpperCase()}
                                     </Text>
                                 </Badge>
                             </View>

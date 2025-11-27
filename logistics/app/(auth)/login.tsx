@@ -62,14 +62,21 @@ export default function LoginScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="flex-1"
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
-                    contentContainerClassName="flex-grow justify-center px-6"
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        paddingHorizontal: 20,
+                        paddingBottom: 40,
+                        justifyContent: 'center',
+                    }}
                     keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
                 >
                     {/* Logo/Branding */}
                     <View className="items-center mb-8">

@@ -78,14 +78,21 @@ export default function RegisterScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="flex-1"
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
-                    contentContainerClassName="px-6 py-8"
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        paddingHorizontal: 20,
+                        paddingBottom: 40
+
+                    }}
                     keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
                 >
                     {/* Logo */}
                     <View className="items-center mb-6">
@@ -106,7 +113,7 @@ export default function RegisterScreen() {
                             className="mb-4"
                         />
 
-                        <View className="flex-row space-x-4 mb-4">
+                        <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
                             <Input
                                 label="First Name"
                                 placeholder="John"

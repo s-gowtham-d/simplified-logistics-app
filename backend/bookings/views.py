@@ -335,96 +335,96 @@ class BookingViewSet(viewsets.ModelViewSet):
             booking.status = 'driver_assigned'
             booking.save()
         
-        @swagger_auto_schema(
-            operation_description="Cancel a booking. Only pending/confirmed bookings can be cancelled.",
-            responses={
-                200: "Booking cancelled successfully",
-                400: "Cannot cancel booking in current status"
-            }
-        )
-        @action(detail=True, methods=['post'])
-        def cancel(self, request, pk=None):
-            """Cancel a booking"""
-            booking = self.get_object()
-            
-            if booking.status in ['delivered', 'completed', 'cancelled']:
-                return Response({
-                    'error': 'Cannot cancel booking in current status'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            booking.status = 'cancelled'
-            booking.save()
-            
-            return Response({
-                'message': 'Booking cancelled successfully',
-                'booking': BookingSerializer(booking).data
-            })
+    @swagger_auto_schema(
+        operation_description="Cancel a booking. Only pending/confirmed bookings can be cancelled.",
+        responses={
+            200: "Booking cancelled successfully",
+            400: "Cannot cancel booking in current status"
+        }
+    )
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel a booking"""
+        booking = self.get_object()
         
-        @swagger_auto_schema(
-            operation_description="Rate a completed booking (1-5 stars)",
-            request_body=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                required=['rating'],
-                properties={
-                    'rating': openapi.Schema(
-                        type=openapi.TYPE_INTEGER,
-                        description='Rating from 1 to 5',
-                        minimum=1,
-                        maximum=5
-                    ),
-                    'feedback': openapi.Schema(
-                        type=openapi.TYPE_STRING,
-                        description='Optional feedback text'
-                    ),
-                }
-            ),
-            responses={
-                200: "Rating submitted successfully",
-                400: "Invalid rating or booking not completed"
-            }
-        )
-        @action(detail=True, methods=['post'])
-        def rate(self, request, pk=None):
-            """Rate a completed booking"""
-            booking = self.get_object()
-            
-            if booking.status != 'completed':
-                return Response({
-                    'error': 'Can only rate completed bookings'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            rating = request.data.get('rating')
-            feedback = request.data.get('feedback', '')
-            
-            if not rating or int(rating) not in range(1, 6):
-                return Response({
-                    'error': 'Rating must be between 1 and 5'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            booking.rating = rating
-            booking.feedback = feedback
-            booking.save()
-            
-            # Update driver rating
-            if booking.driver:
-                self._update_driver_rating(booking.driver, int(rating))
-            
+        if booking.status in ['delivered', 'completed', 'cancelled']:
             return Response({
-                'message': 'Rating submitted successfully',
-                'booking': BookingSerializer(booking).data
-            })
+                'error': 'Cannot cancel booking in current status'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        def _update_driver_rating(self, driver, new_rating):
-            """Update driver's average rating"""
-            total_trips = driver.total_trips
-            current_rating = float(driver.rating)
-            
-            # Calculate new average
-            new_average = ((current_rating * total_trips) + new_rating) / (total_trips + 1)
-            
-            driver.rating = round(new_average, 2)
-            driver.total_trips += 1
-            driver.save()
+        booking.status = 'cancelled'
+        booking.save()
+        
+        return Response({
+            'message': 'Booking cancelled successfully',
+            'booking': BookingSerializer(booking).data
+        })
+    
+    @swagger_auto_schema(
+        operation_description="Rate a completed booking (1-5 stars)",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['rating'],
+            properties={
+                'rating': openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description='Rating from 1 to 5',
+                    minimum=1,
+                    maximum=5
+                ),
+                'feedback': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='Optional feedback text'
+                ),
+            }
+        ),
+        responses={
+            200: "Rating submitted successfully",
+            400: "Invalid rating or booking not completed"
+        }
+    )
+    @action(detail=True, methods=['post'])
+    def rate(self, request, pk=None):
+        """Rate a completed booking"""
+        booking = self.get_object()
+        
+        if booking.status != 'completed':
+            return Response({
+                'error': 'Can only rate completed bookings'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        rating = request.data.get('rating')
+        feedback = request.data.get('feedback', '')
+        
+        if not rating or int(rating) not in range(1, 6):
+            return Response({
+                'error': 'Rating must be between 1 and 5'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        booking.rating = rating
+        booking.feedback = feedback
+        booking.save()
+        
+        # Update driver rating
+        if booking.driver:
+            self._update_driver_rating(booking.driver, int(rating))
+        
+        return Response({
+            'message': 'Rating submitted successfully',
+            'booking': BookingSerializer(booking).data
+        })
+    
+    def _update_driver_rating(self, driver, new_rating):
+        """Update driver's average rating"""
+        total_trips = driver.total_trips
+        current_rating = float(driver.rating)
+        
+        # Calculate new average
+        new_average = ((current_rating * total_trips) + new_rating) / (total_trips + 1)
+        
+        driver.rating = round(new_average, 2)
+        driver.total_trips += 1
+        driver.save()
             
 class ProofMediaViewSet(viewsets.ModelViewSet):
     """

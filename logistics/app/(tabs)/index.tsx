@@ -102,14 +102,14 @@ export default function HomeScreen() {
                         </CardHeader>
 
                         <CardContent>
-                            <View className="flex-row items-center mb-4">
-                                <View className="flex-row items-center mr-4">
+                            <View className="flex-row flex-wrap items-center justify-between mb-4">
+                                <View className="flex-row items-center mr-1 ">
                                     <Zap size={16} color={theme.success} />
                                     <Text className="text-xs text-muted-foreground ml-1">
                                         30 min pickup
                                     </Text>
                                 </View>
-                                <View className="flex-row items-center mr-4">
+                                <View className="flex-row items-center mr-1 ">
                                     <Shield size={16} color={theme.success} />
                                     <Text className="text-xs text-muted-foreground ml-1">
                                         Insured delivery
