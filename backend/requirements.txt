@@ -8,3 +8,4 @@ python-decouple
 python-dateutil
 requests
 drf-yasg
+logging

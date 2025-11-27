@@ -16,11 +16,6 @@ class TrackingLogViewSet(viewsets.ModelViewSet):
     serializer_class = TrackingLogSerializer
     
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return TrackingLog.objects.none()
-
-        if not self.request.user.is_authenticated:
-            return TrackingLog.objects.none()
         return TrackingLog.objects.filter(booking__user=self.request.user)
     
     @action(detail=False, methods=['get'])
@@ -65,59 +60,59 @@ class TrackingLogViewSet(viewsets.ModelViewSet):
         
         booking = get_object_or_404(Booking, id=booking_id, user=request.user)
         
-        if not booking.driver:
-            return Response({
-                'error': 'No driver assigned to this booking yet'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        driver = booking.driver
-        
-        # Calculate mock ETA (in production, use routing API)
-        # Assuming 30 km/hr average speed
-        if driver.current_lat and driver.current_lng:
-            # Simple mock calculation
-            eta_minutes = 15  # Mock ETA
-        else:
-            eta_minutes = None
-        
-        return Response({
+        # Build response with booking info
+        response_data = {
             'booking': {
                 'id': booking.id,
                 'status': booking.status,
                 'pickup_address': booking.pickup_address,
                 'dropoff_address': booking.dropoff_address,
-            },
-            'driver': {
-                'name': driver.user.get_full_name(),
-                'phone': driver.user.phone_number,
-                'rating': float(driver.rating),
-                'vehicle': {
-                    'type': driver.vehicle.vehicle_type if driver.vehicle else None,
-                    'number': driver.vehicle.vehicle_number if driver.vehicle else None,
-                }
-            },
-            'live_location': {
-                'lat': float(driver.current_lat) if driver.current_lat else None,
-                'lng': float(driver.current_lng) if driver.current_lng else None,
-            },
-            'eta_minutes': eta_minutes,
-            'last_updated': tracking_logs.latest('timestamp').timestamp if tracking_logs.exists() else None
-        }) if TrackingLog.objects.filter(booking=booking).exists() else Response({
-            'booking': {
-                'id': booking.id,
-                'status': booking.status,
-            },
-            'driver': {
-                'name': driver.user.get_full_name(),
-                'phone': driver.user.phone_number,
-                'rating': float(driver.rating),
-            },
-            'live_location': {
-                'lat': float(driver.current_lat) if driver.current_lat else None,
-                'lng': float(driver.current_lng) if driver.current_lng else None,
-            },
-            'eta_minutes': eta_minutes
-        })
+            }
+        }
+        
+        # If no driver assigned yet
+        if not booking.driver:
+            response_data['driver'] = None
+            response_data['live_location'] = None
+            response_data['eta_minutes'] = None
+            response_data['message'] = 'Searching for a driver...'
+            return Response(response_data)
+        
+        # Driver is assigned
+        driver = booking.driver
+        
+        response_data['driver'] = {
+            'name': driver.user.get_full_name(),
+            'phone': driver.user.phone_number,
+            'rating': float(driver.rating),
+            'vehicle': {
+                'type': driver.vehicle.vehicle_type if driver.vehicle else None,
+                'number': driver.vehicle.vehicle_number if driver.vehicle else None,
+                'name': driver.vehicle.vehicle_name if driver.vehicle else None,
+            } if driver.vehicle else None
+        }
+        
+        response_data['live_location'] = {
+            'lat': float(driver.current_lat) if driver.current_lat else None,
+            'lng': float(driver.current_lng) if driver.current_lng else None,
+        }
+        
+        # Calculate mock ETA (in production, use routing API)
+        if driver.current_lat and driver.current_lng:
+            eta_minutes = 15  # Mock ETA
+        else:
+            eta_minutes = None
+            
+        response_data['eta_minutes'] = eta_minutes
+        
+        # Get last tracking log timestamp
+        tracking_logs = TrackingLog.objects.filter(booking=booking).order_by('-timestamp')
+        if tracking_logs.exists():
+            response_data['last_updated'] = tracking_logs.first().timestamp
+        else:
+            response_data['last_updated'] = None
+        
+        return Response(response_data)
     
     @action(detail=False, methods=['post'])
     def update_location(self, request):

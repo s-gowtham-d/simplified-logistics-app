@@ -10,12 +10,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import {
-    Package,
+    History as HistoryIcon,
     MapPin,
     Truck,
     Clock,
+    Star,
     ChevronRight,
-    RefreshCw,
+    Calendar,
 } from 'lucide-react-native';
 import {
     Card,
@@ -28,33 +29,12 @@ import {
 } from '@/components/ui';
 import { bookingsAPI } from '@/lib/api';
 
-const STATUS_COLORS: any = {
-    pending: 'warning',
-    confirmed: 'secondary',
-    driver_assigned: 'secondary',
-    picked_up: 'default',
-    in_transit: 'default',
-    delivered: 'success',
-    completed: 'success',
-    cancelled: 'destructive',
-};
-
-const STATUS_LABELS: any = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    driver_assigned: 'Driver Assigned',
-    picked_up: 'Picked Up',
-    in_transit: 'In Transit',
-    delivered: 'Delivered',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
-};
-
-export default function BookingsScreen() {
+export default function HistoryScreen() {
     const router = useRouter();
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [filter, setFilter] = useState<'all' | 'completed' | 'cancelled'>('all');
 
     useFocusEffect(
         useCallback(() => {
@@ -65,14 +45,15 @@ export default function BookingsScreen() {
     const fetchBookings = async () => {
         try {
             const response = await bookingsAPI.getAll();
-            // Filter only active bookings
-            const activeBookings = response.data.results.filter(
-                (b: any) => !['completed', 'cancelled'].includes(b.status)
+            // Filter completed and cancelled bookings
+            console.log("History", response.data)
+            const historyBookings = response.data.results.filter(
+                (b: any) => ['completed', 'cancelled'].includes(b.status)
             );
-            setBookings(activeBookings);
+            setBookings(historyBookings);
         } catch (error) {
             console.error('Error fetching bookings:', error);
-            Alert.alert('Error', 'Failed to load bookings');
+            Alert.alert('Error', 'Failed to load booking history');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -91,13 +72,39 @@ export default function BookingsScreen() {
         });
     };
 
+    const filteredBookings = bookings.filter((b: any) => {
+        if (filter === 'all') return true;
+        return b.status === filter;
+    });
+
     return (
         <SafeAreaView className="flex-1 bg-background" edges={['top']}>
             <View className="px-6 pt-6 pb-4">
-                <Text className="text-3xl font-bold text-foreground">Active Bookings</Text>
+                <Text className="text-3xl font-bold text-foreground">History</Text>
                 <Text className="text-sm text-muted-foreground mt-1">
-                    Track your ongoing deliveries
+                    View your past bookings
                 </Text>
+            </View>
+
+            {/* Filter Tabs */}
+            <View className="px-6 mb-4">
+                <View className="flex-row bg-secondary rounded-lg p-1">
+                    <FilterTab
+                        label="All"
+                        isActive={filter === 'all'}
+                        onPress={() => setFilter('all')}
+                    />
+                    <FilterTab
+                        label="Completed"
+                        isActive={filter === 'completed'}
+                        onPress={() => setFilter('completed')}
+                    />
+                    <FilterTab
+                        label="Cancelled"
+                        isActive={filter === 'cancelled'}
+                        onPress={() => setFilter('cancelled')}
+                    />
+                </View>
             </View>
 
             <ScrollView
@@ -109,18 +116,20 @@ export default function BookingsScreen() {
             >
                 {loading ? (
                     <View className="py-20 items-center">
-                        <RefreshCw size={32} color="#9CA3AF" />
-                        <Text className="text-muted-foreground mt-4">Loading bookings...</Text>
+                        <HistoryIcon size={32} color="#9CA3AF" />
+                        <Text className="text-muted-foreground mt-4">Loading history...</Text>
                     </View>
-                ) : bookings.length === 0 ? (
+                ) : filteredBookings.length === 0 ? (
                     <Card className="mt-4">
                         <CardContent className="py-12 items-center">
-                            <Package size={48} color="#9CA3AF" />
+                            <HistoryIcon size={48} color="#9CA3AF" />
                             <Text className="text-lg font-semibold text-foreground mt-4">
-                                No Active Bookings
+                                No Bookings Found
                             </Text>
                             <Text className="text-sm text-muted-foreground text-center mt-2 mb-6">
-                                You don't have any active bookings at the moment
+                                {filter === 'all'
+                                    ? "You don't have any booking history yet"
+                                    : `No ${filter} bookings found`}
                             </Text>
                             <Button
                                 onPress={() => router.push('/(tabs)')}
@@ -134,8 +143,8 @@ export default function BookingsScreen() {
                     </Card>
                 ) : (
                     <View className="space-y-4 pb-6">
-                        {bookings.map((booking: any) => (
-                            <BookingCard
+                        {filteredBookings.map((booking: any) => (
+                            <HistoryBookingCard
                                 key={booking.id}
                                 booking={booking}
                                 onPress={() => handleBookingPress(booking)}
@@ -148,7 +157,35 @@ export default function BookingsScreen() {
     );
 }
 
-function BookingCard({ booking, onPress }: { booking: any; onPress: () => void }) {
+function FilterTab({
+    label,
+    isActive,
+    onPress,
+}: {
+    label: string;
+    isActive: boolean;
+    onPress: () => void;
+}) {
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            className={`flex-1 py-2 rounded-md ${isActive ? 'bg-background' : 'bg-transparent'
+                }`}
+            activeOpacity={0.7}
+        >
+            <Text
+                className={`text-center text-sm font-semibold ${isActive ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+            >
+                {label}
+            </Text>
+        </TouchableOpacity>
+    );
+}
+
+function HistoryBookingCard({ booking, onPress }: { booking: any; onPress: () => void }) {
+    const isCompleted = booking.status === 'completed';
+
     return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
             <Card>
@@ -158,50 +195,50 @@ function BookingCard({ booking, onPress }: { booking: any; onPress: () => void }
                             <View className="flex-row items-center mb-2">
                                 <CardTitle className="text-base">Booking #{booking.id}</CardTitle>
                                 <Badge
-                                    variant={STATUS_COLORS[booking.status]}
+                                    variant={isCompleted ? 'success' : 'destructive'}
                                     className="ml-3"
                                 >
-                                    <Text className="text-foreground">
-                                        {STATUS_LABELS[booking.status]}
+                                    <Text className="text-white text-xs font-semibold">
+                                        {isCompleted ? 'COMPLETED' : 'CANCELLED'}
                                     </Text>
                                 </Badge>
                             </View>
-                            <CardDescription>
-                                {new Date(booking.created_at).toLocaleDateString('en-IN', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })}
-                            </CardDescription>
+                            <View className="flex-row items-center">
+                                <Calendar size={12} color="#6B7280" />
+                                <CardDescription className="ml-1">
+                                    {new Date(booking.created_at).toLocaleDateString('en-IN', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric',
+                                    })}
+                                </CardDescription>
+                            </View>
                         </View>
                         <ChevronRight size={20} color="#9CA3AF" />
                     </View>
                 </CardHeader>
 
                 <CardContent>
-                    {/* Pickup */}
+                    {/* Locations */}
                     <View className="flex-row items-start mb-3">
                         <View className="w-8 h-8 bg-primary/10 rounded-full items-center justify-center mr-3 mt-0.5">
                             <MapPin size={16} color="#1E3A8A" />
                         </View>
                         <View className="flex-1">
-                            <Text className="text-xs text-muted-foreground mb-1">Pickup</Text>
-                            <Text className="text-sm text-foreground" numberOfLines={2}>
+                            <Text className="text-xs text-muted-foreground mb-1">From</Text>
+                            <Text className="text-sm text-foreground" numberOfLines={1}>
                                 {booking.pickup_address}
                             </Text>
                         </View>
                     </View>
 
-                    {/* Dropoff */}
                     <View className="flex-row items-start mb-4">
                         <View className="w-8 h-8 bg-green-100 rounded-full items-center justify-center mr-3 mt-0.5">
                             <MapPin size={16} color="#10B981" />
                         </View>
                         <View className="flex-1">
-                            <Text className="text-xs text-muted-foreground mb-1">Dropoff</Text>
-                            <Text className="text-sm text-foreground" numberOfLines={2}>
+                            <Text className="text-xs text-muted-foreground mb-1">To</Text>
+                            <Text className="text-sm text-foreground" numberOfLines={1}>
                                 {booking.dropoff_address}
                             </Text>
                         </View>
@@ -215,12 +252,14 @@ function BookingCard({ booking, onPress }: { booking: any; onPress: () => void }
                                 {booking.vehicle_details?.vehicle_name}
                             </Text>
                         </View>
-                        <View className="flex-row items-center">
-                            <Clock size={16} color="#6B7280" />
-                            <Text className="text-xs text-muted-foreground ml-2">
-                                {booking.duration_mins} mins
-                            </Text>
-                        </View>
+                        {isCompleted && booking.rating && (
+                            <View className="flex-row items-center">
+                                <Star size={14} color="#F59E0B" fill="#F59E0B" />
+                                <Text className="text-xs text-muted-foreground ml-1">
+                                    {booking.rating}/5
+                                </Text>
+                            </View>
+                        )}
                         <Text className="text-sm font-bold text-primary">
                             ₹{booking.final_price}
                         </Text>

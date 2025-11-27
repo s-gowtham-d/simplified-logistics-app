@@ -20,6 +20,7 @@ import {
     Camera,
     Star,
     X,
+    Search,
 } from 'lucide-react-native';
 import {
     Button,
@@ -57,8 +58,12 @@ export default function TrackingScreen() {
             ]);
             setBooking(bookingResponse.data);
             setTracking(trackingResponse.data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching tracking:', error);
+            // Only show error if it's not a 400 (which might mean no driver assigned)
+            if (error.response?.status !== 400) {
+                Alert.alert('Error', 'Failed to load tracking information');
+            }
         } finally {
             setLoading(false);
         }
@@ -111,7 +116,6 @@ export default function TrackingScreen() {
             if (proofMedia.length === 0) {
                 Alert.alert('No Proof', 'No proof media available yet');
             } else {
-                // Show proof media (you can navigate to a gallery screen)
                 Alert.alert(
                     'Proof Media',
                     `${proofMedia.length} proof items available`,
@@ -134,7 +138,7 @@ export default function TrackingScreen() {
 
     const canCancel = ['pending', 'confirmed'].includes(booking?.status);
     const canRate = booking?.status === 'completed' && !booking?.rating;
-    const showDriverInfo = booking?.status !== 'pending';
+    const hasDriver = tracking?.driver !== null;
 
     return (
         <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -160,13 +164,22 @@ export default function TrackingScreen() {
                         <CardContent className="py-6">
                             <View className="items-center">
                                 <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
-                                    <Navigation size={32} color="#1E3A8A" />
+                                    {hasDriver ? (
+                                        <Navigation size={32} color="#1E3A8A" />
+                                    ) : (
+                                        <Search size={32} color="#1E3A8A" />
+                                    )}
                                 </View>
                                 <Badge variant="default" className="mb-3">
                                     <Text className="text-white font-semibold">
                                         {booking?.status.replace('_', ' ').toUpperCase()}
                                     </Text>
                                 </Badge>
+                                {!hasDriver && (
+                                    <Text className="text-sm text-muted-foreground text-center mt-2">
+                                        {tracking?.message || 'Searching for a driver...'}
+                                    </Text>
+                                )}
                                 {tracking?.eta_minutes && (
                                     <View className="flex-row items-center mt-2">
                                         <Clock size={16} color="#6B7280" />
@@ -179,8 +192,8 @@ export default function TrackingScreen() {
                         </CardContent>
                     </Card>
 
-                    {/* Driver Info */}
-                    {showDriverInfo && tracking?.driver && (
+                    {/* Driver Info - Only show if driver assigned */}
+                    {hasDriver && tracking?.driver && (
                         <Card className="mb-4">
                             <CardHeader>
                                 <CardTitle>Driver Details</CardTitle>
@@ -218,7 +231,7 @@ export default function TrackingScreen() {
                                         <View className="flex-row items-center">
                                             <Package size={16} color="#6B7280" />
                                             <Text className="text-sm text-muted-foreground ml-2">
-                                                {tracking.driver.vehicle.type} • {tracking.driver.vehicle.number}
+                                                {tracking.driver.vehicle.name} • {tracking.driver.vehicle.number}
                                             </Text>
                                         </View>
                                     </View>
@@ -358,7 +371,9 @@ export default function TrackingScreen() {
                             size="lg"
                             loading={cancelling}
                         >
-                            Cancel Booking
+                            <Text className="text-white font-semibold">
+                                Cancel Booking
+                            </Text>
                         </Button>
                     )}
                 </View>
