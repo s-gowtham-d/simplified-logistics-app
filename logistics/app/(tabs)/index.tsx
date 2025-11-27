@@ -39,6 +39,8 @@ export default function HomeScreen() {
     const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
     const user = useAuthStore((state) => state.user);
     const [vehicles, setVehicles] = useState([]);
+    const [vehiclesCount, setVehiclesCount] = useState(0);
+
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -49,7 +51,8 @@ export default function HomeScreen() {
         try {
             const response = await vehiclesAPI.getAll();
             console.log(response.data)
-            setVehicles(response.data.results.slice(0, 3)); // Show top 3
+            setVehiclesCount(response.data.count);
+            setVehicles(response.data.results); // Show top 3
         } catch (error) {
             console.error('Error fetching vehicles:', error);
         } finally {
@@ -140,7 +143,7 @@ export default function HomeScreen() {
                         <View className="flex-1 px-2">
                             <Card>
                                 <CardContent className="items-center py-4">
-                                    <Text className="text-2xl font-bold text-primary mb-1">15+</Text>
+                                    <Text className="text-2xl font-bold text-primary mb-1">{vehiclesCount}+</Text>
                                     <Text className="text-xs text-muted-foreground text-center">
                                         Vehicle Types
                                     </Text>
@@ -235,7 +238,7 @@ export default function HomeScreen() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <View className="space-y-3">
+                        <View className="space-y-3 flex-col gap-3">
                             {vehicles.map((vehicle: any, index: number) => (
                                 <VehicleCard
                                     key={vehicle.id}
@@ -286,7 +289,7 @@ function FeatureCard({
 }) {
     return (
         <View className="w-1/2 p-2">
-            <Card className="h-full">
+            <Card>
                 <CardContent className="py-5">
                     <View className="items-center">
                         <View className="w-14 h-14 bg-secondary rounded-2xl items-center justify-center mb-3 shadow-sm">
@@ -334,12 +337,9 @@ function VehicleCard({
 
                         {/* Vehicle Details */}
                         <View className="flex-1">
-                            <View className="flex-row items-center mb-2">
-                                <Text className="text-base font-bold text-foreground">
-                                    {vehicle.vehicle_name}
-                                </Text>
+                            <View className="flex-col items-start mb-2">
                                 {vehicle.is_electric && (
-                                    <Badge variant="default" className="ml-2">
+                                    <Badge variant="default" className="mb-2">
                                         <View className="flex-row items-center">
                                             <Leaf size={10} color="#fff" />
                                             <Text className="text-[10px] text-white font-bold ml-1">
@@ -348,6 +348,10 @@ function VehicleCard({
                                         </View>
                                     </Badge>
                                 )}
+                                <Text className="text-base font-bold text-foreground">
+                                    {vehicle.vehicle_name}
+                                </Text>
+
                             </View>
 
                             <Text className="text-xs text-muted-foreground mb-2">

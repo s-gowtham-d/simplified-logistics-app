@@ -9,7 +9,7 @@ import json
 BASE_URL = 'http://127.0.0.1:8000/api'
 
 def test_apis():
-    print("Testing Porter Logistics APIs\n")
+    print("Testing Logistics APIs\n")
     print("="*50)
     
     # Test 1: Get Vehicles

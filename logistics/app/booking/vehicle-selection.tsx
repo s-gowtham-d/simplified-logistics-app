@@ -32,7 +32,7 @@ export default function VehicleSelectionScreen() {
             }
 
             const response = await vehiclesAPI.getAll(params);
-            setVehicles(response.data);
+            setVehicles(response.data?.results || []);
         } catch (error) {
             console.error('Error fetching vehicles:', error);
         } finally {
@@ -107,15 +107,18 @@ export default function VehicleSelectionScreen() {
                                         </View>
 
                                         <View className="flex-1">
-                                            <View className="flex-row items-center mb-2">
+                                            <View className="flex-col items-start mb-2">
+                                                {vehicle.is_electric && (
+                                                    <Badge variant="default" className="mb-2">
+                                                        <Text className="text-white font-bold">
+                                                            Electric
+                                                        </Text>
+                                                    </Badge>
+                                                )}
                                                 <Text className="text-base font-bold text-foreground">
                                                     {vehicle.vehicle_name}
                                                 </Text>
-                                                {vehicle.is_electric && (
-                                                    <Badge variant="default" className="ml-2">
-                                                        Electric
-                                                    </Badge>
-                                                )}
+
                                             </View>
 
                                             <Text className="text-sm text-muted-foreground mb-2">

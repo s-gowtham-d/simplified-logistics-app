@@ -42,6 +42,8 @@ export default function QuotesScreen() {
                 dropoffLocation.lng
             );
 
+            console.log(selectedVehicle, distance, isGreenFleet, bookingType, dropoffLocation)
+
             const response = await bookingsAPI.getAllQuotes({
                 vehicle_type: selectedVehicle.vehicle_type,
                 distance_km: distance,
@@ -192,14 +194,18 @@ export default function QuotesScreen() {
                                     {quote.type === 'economy' && (
                                         <View className="mt-3 pt-3 border-t border-border">
                                             <Badge variant="default">
-                                                Best Value
+                                                <Text className="text-background font-bold">
+                                                    Best Value
+                                                </Text>
                                             </Badge>
                                         </View>
                                     )}
                                     {quote.type === 'fast' && (
                                         <View className="mt-3 pt-3 border-t border-border">
                                             <Badge variant="secondary">
-                                                Fastest Delivery
+                                                <Text className="text-foreground font-bold">
+                                                    Fastest Delivery
+                                                </Text>
                                             </Badge>
                                         </View>
                                     )}

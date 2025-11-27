@@ -76,7 +76,7 @@ export default function LoginScreen() {
                         <View className="w-20 h-20 bg-primary rounded-2xl items-center justify-center mb-4">
                             <Truck size={40} color="#fff" />
                         </View>
-                        <Text className="text-3xl font-bold text-foreground">Porter Logistics</Text>
+                        <Text className="text-3xl font-bold text-foreground">Logistics</Text>
                         <Text className="text-muted-foreground mt-2">
                             Your trusted delivery partner
                         </Text>

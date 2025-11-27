@@ -11,9 +11,10 @@ import { Package, Calculator, Leaf } from 'lucide-react-native';
 import { Button, Input, Card, CardContent } from '@/components/ui';
 import { useBookingStore } from '@/lib/store';
 import { vehiclesAPI } from '@/lib/api';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ItemDetailsScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const {
         setItemsDescription,
@@ -82,7 +83,13 @@ export default function ItemDetailsScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <ScrollView className="flex-1 px-6 py-6">
+            <ScrollView
+                className="flex-1 px-6 py-6"
+                contentContainerStyle={{
+                    paddingBottom: insets.bottom + 50,
+                }}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Info Card */}
                 <Card className="mb-6">
                     <CardContent className="flex-row items-start py-4">
@@ -150,7 +157,9 @@ export default function ItemDetailsScreen() {
                                 loading={calculating}
                                 disabled={!weight || !dimensions}
                             >
-                                Calculate Best Vehicle
+                                <Text className='text-foreground'>
+                                    Calculate Best Vehicle
+                                </Text>
                             </Button>
                         </CardContent>
                     </Card>

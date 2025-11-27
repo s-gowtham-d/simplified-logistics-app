@@ -18,6 +18,7 @@ import uuid
 from rest_framework.parsers import MultiPartParser, FormParser
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from decimal import Decimal, InvalidOperation
 
 class BookingViewSet(viewsets.ModelViewSet):
     """
@@ -178,83 +179,118 @@ class BookingViewSet(viewsets.ModelViewSet):
             400: "Bad Request - Invalid vehicle type or missing parameters"
         }
     )
+
+    def _get_booking_type_description(self, booking_type):
+        descriptions = {
+            'economy': 'Standard delivery at best price',
+            'fast': 'Priority delivery - 20% faster',
+            'helper': 'Includes loading/unloading helper'
+        }
+        return descriptions.get(booking_type, '')
+
+    def _get_booking_type_features(self, booking_type):
+        features = {
+            'economy': [
+                'Affordable delivery',
+                'Best standard service',
+                'Real-time tracking',
+            ],
+            'fast': [
+                'Priority delivery',
+                '20% faster ETA',
+                'Real-time tracking',
+            ],
+            'helper': [
+                'Includes helper',
+                'Loading and unloading support',
+                'Best for heavy items',
+            ]
+        }
+        return features.get(booking_type, [])
+
+
     @action(detail=False, methods=['post'])
     def get_all_quotes(self, request):
-        """
-        Get quotes for all booking types
-        Shows comparison of Fast, Economy, and Helper options
-        """
+
         vehicle_type = request.data.get('vehicle_type')
-        distance_km = Decimal(request.data.get('distance_km', 0))
-        is_green_fleet = request.data.get('is_green_fleet', False)
-        
+
+        # --- FIX 1: safely convert to Decimal ---
+        distance_km_raw = request.data.get("distance_km", "0")
+        try:
+            distance_km = Decimal(str(distance_km_raw))
+        except InvalidOperation:
+            return Response({"error": "Invalid distance_km"}, status=400)
+
+        # --- FIX 2: safely convert boolean ---
+        is_green_fleet = request.data.get("is_green_fleet", False)
+        if isinstance(is_green_fleet, str):
+            is_green_fleet = is_green_fleet.lower() == "true"
+
+        # fetch vehicle
         vehicle = Vehicle.objects.filter(
             vehicle_type=vehicle_type,
             is_available=True
         ).first()
-        
+
         if not vehicle:
-            return Response({
-                'error': 'No available vehicle of this type'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({"error": "No available vehicle of this type"}, status=400)
+
         quotes = []
         booking_types = ['economy', 'fast', 'helper']
-        
+
         for booking_type in booking_types:
+
             quote_data = {
-                'vehicle_type': vehicle_type,
-                'distance_km': distance_km,
-                'booking_type': booking_type,
-                'is_green_fleet': is_green_fleet
+                "vehicle_type": vehicle_type,
+                "distance_km": str(distance_km),   # serializer expects string
+                "booking_type": booking_type,
+                "is_green_fleet": is_green_fleet
             }
-            
-            # Reuse quote calculation logic
-            quote_serializer = QuoteRequestSerializer(data=quote_data)
-            quote_serializer.is_valid(raise_exception=True)
-            
+
+            serializer = QuoteRequestSerializer(data=quote_data)
+            serializer.is_valid(raise_exception=True)
+
+            # pricing
             base_price = vehicle.base_price
             distance_price = distance_km * vehicle.per_km_price
-            
+
             multipliers = {
-                'fast': Decimal('1.5'),
-                'economy': Decimal('1.0'),
-                'helper': Decimal('1.3')
+                "fast": Decimal("1.5"),
+                "economy": Decimal("1.0"),
+                "helper": Decimal("1.3"),
             }
-            
-            multiplier = multipliers[booking_type]
-            subtotal = (base_price + distance_price) * multiplier
-            
-            green_discount = Decimal('0')
-            if is_green_fleet and vehicle.is_electric:
-                green_discount = subtotal * Decimal('0.05')
-            
+
+            subtotal = (base_price + distance_price) * multipliers[booking_type]
+
+            green_discount = subtotal * Decimal("0.05") if is_green_fleet and vehicle.is_electric else Decimal("0")
+
             total_price = subtotal - green_discount
-            
+
+            # duration
             estimated_duration = int((float(distance_km) / 30) * 60)
-            if booking_type == 'fast':
+            if booking_type == "fast":
                 estimated_duration = int(estimated_duration * 0.8)
-            elif booking_type == 'economy':
+            elif booking_type == "economy":
                 estimated_duration = int(estimated_duration * 1.2)
-            
+
             quotes.append({
-                'type': booking_type,
-                'label': booking_type.capitalize(),
-                'description': self._get_booking_type_description(booking_type),
-                'price': float(total_price),
-                'duration_mins': estimated_duration,
-                'features': self._get_booking_type_features(booking_type)
+                "type": booking_type,
+                "label": booking_type.capitalize(),
+                "description": self._get_booking_type_description(booking_type),
+                "price": float(total_price),
+                "duration_mins": estimated_duration,
+                "features": self._get_booking_type_features(booking_type),
             })
-        
+
         return Response({
-            'vehicle': {
-                'type': vehicle_type,
-                'name': vehicle.vehicle_name,
-                'is_electric': vehicle.is_electric
+            "vehicle": {
+                "type": vehicle_type,
+                "name": vehicle.vehicle_name,
+                "is_electric": vehicle.is_electric,
             },
-            'quotes': quotes
+            "quotes": quotes,
         })
-    
+
     def _get_booking_type_description(self, booking_type):
         descriptions = {
             'economy': 'Standard delivery at best price',
@@ -270,7 +306,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             'helper': ['Loading assistance', 'Unloading assistance', 'Safe handling']
         }
         return features.get(booking_type, [])
-    
+        
     def create(self, request, *args, **kwargs):
         """Create a new booking"""
         serializer = self.get_serializer(data=request.data, context={'request': request})
@@ -298,98 +334,98 @@ class BookingViewSet(viewsets.ModelViewSet):
             booking.driver = driver
             booking.status = 'driver_assigned'
             booking.save()
-    
-    @swagger_auto_schema(
-        operation_description="Cancel a booking. Only pending/confirmed bookings can be cancelled.",
-        responses={
-            200: "Booking cancelled successfully",
-            400: "Cannot cancel booking in current status"
-        }
-    )
-    @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
-        """Cancel a booking"""
-        booking = self.get_object()
         
-        if booking.status in ['delivered', 'completed', 'cancelled']:
-            return Response({
-                'error': 'Cannot cancel booking in current status'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        booking.status = 'cancelled'
-        booking.save()
-        
-        return Response({
-            'message': 'Booking cancelled successfully',
-            'booking': BookingSerializer(booking).data
-        })
-    
-    @swagger_auto_schema(
-        operation_description="Rate a completed booking (1-5 stars)",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['rating'],
-            properties={
-                'rating': openapi.Schema(
-                    type=openapi.TYPE_INTEGER,
-                    description='Rating from 1 to 5',
-                    minimum=1,
-                    maximum=5
-                ),
-                'feedback': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Optional feedback text'
-                ),
+        @swagger_auto_schema(
+            operation_description="Cancel a booking. Only pending/confirmed bookings can be cancelled.",
+            responses={
+                200: "Booking cancelled successfully",
+                400: "Cannot cancel booking in current status"
             }
-        ),
-        responses={
-            200: "Rating submitted successfully",
-            400: "Invalid rating or booking not completed"
-        }
-    )
-    @action(detail=True, methods=['post'])
-    def rate(self, request, pk=None):
-        """Rate a completed booking"""
-        booking = self.get_object()
-        
-        if booking.status != 'completed':
+        )
+        @action(detail=True, methods=['post'])
+        def cancel(self, request, pk=None):
+            """Cancel a booking"""
+            booking = self.get_object()
+            
+            if booking.status in ['delivered', 'completed', 'cancelled']:
+                return Response({
+                    'error': 'Cannot cancel booking in current status'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            booking.status = 'cancelled'
+            booking.save()
+            
             return Response({
-                'error': 'Can only rate completed bookings'
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': 'Booking cancelled successfully',
+                'booking': BookingSerializer(booking).data
+            })
         
-        rating = request.data.get('rating')
-        feedback = request.data.get('feedback', '')
-        
-        if not rating or int(rating) not in range(1, 6):
+        @swagger_auto_schema(
+            operation_description="Rate a completed booking (1-5 stars)",
+            request_body=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                required=['rating'],
+                properties={
+                    'rating': openapi.Schema(
+                        type=openapi.TYPE_INTEGER,
+                        description='Rating from 1 to 5',
+                        minimum=1,
+                        maximum=5
+                    ),
+                    'feedback': openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                        description='Optional feedback text'
+                    ),
+                }
+            ),
+            responses={
+                200: "Rating submitted successfully",
+                400: "Invalid rating or booking not completed"
+            }
+        )
+        @action(detail=True, methods=['post'])
+        def rate(self, request, pk=None):
+            """Rate a completed booking"""
+            booking = self.get_object()
+            
+            if booking.status != 'completed':
+                return Response({
+                    'error': 'Can only rate completed bookings'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            rating = request.data.get('rating')
+            feedback = request.data.get('feedback', '')
+            
+            if not rating or int(rating) not in range(1, 6):
+                return Response({
+                    'error': 'Rating must be between 1 and 5'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            booking.rating = rating
+            booking.feedback = feedback
+            booking.save()
+            
+            # Update driver rating
+            if booking.driver:
+                self._update_driver_rating(booking.driver, int(rating))
+            
             return Response({
-                'error': 'Rating must be between 1 and 5'
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': 'Rating submitted successfully',
+                'booking': BookingSerializer(booking).data
+            })
         
-        booking.rating = rating
-        booking.feedback = feedback
-        booking.save()
-        
-        # Update driver rating
-        if booking.driver:
-            self._update_driver_rating(booking.driver, int(rating))
-        
-        return Response({
-            'message': 'Rating submitted successfully',
-            'booking': BookingSerializer(booking).data
-        })
-    
-    def _update_driver_rating(self, driver, new_rating):
-        """Update driver's average rating"""
-        total_trips = driver.total_trips
-        current_rating = float(driver.rating)
-        
-        # Calculate new average
-        new_average = ((current_rating * total_trips) + new_rating) / (total_trips + 1)
-        
-        driver.rating = round(new_average, 2)
-        driver.total_trips += 1
-        driver.save()
-        
+        def _update_driver_rating(self, driver, new_rating):
+            """Update driver's average rating"""
+            total_trips = driver.total_trips
+            current_rating = float(driver.rating)
+            
+            # Calculate new average
+            new_average = ((current_rating * total_trips) + new_rating) / (total_trips + 1)
+            
+            driver.rating = round(new_average, 2)
+            driver.total_trips += 1
+            driver.save()
+            
 class ProofMediaViewSet(viewsets.ModelViewSet):
     """
     ViewSet for ProofMedia model
