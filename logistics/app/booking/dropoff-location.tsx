@@ -3,7 +3,6 @@ import {
     View,
     Text,
     ScrollView,
-    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
@@ -11,19 +10,19 @@ import { Button, Input, Card, CardContent } from '@/components/ui';
 import { useBookingStore } from '@/lib/store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function PickupLocationScreen() {
+export default function DropoffLocationScreen() {
     const router = useRouter();
-    const setPickupLocation = useBookingStore((state) => state.setPickupLocation);
+    const setDropoffLocation = useBookingStore((state) => state.setDropoffLocation);
 
     const [address, setAddress] = useState('');
     const [contactName, setContactName] = useState('');
     const [contactPhone, setContactPhone] = useState('');
     const [errors, setErrors] = useState<any>({});
 
-    // Mock coordinates (in production, use geocoding API)
+    // Mock coordinates
     const mockCoordinates = {
-        lat: 11.0168,
-        lng: 76.9558,
+        lat: 11.0510,
+        lng: 76.9973,
     };
 
     const handleContinue = () => {
@@ -39,7 +38,7 @@ export default function PickupLocationScreen() {
         }
 
         // Save to store
-        setPickupLocation({
+        setDropoffLocation({
             address,
             contactName,
             contactPhone,
@@ -47,7 +46,7 @@ export default function PickupLocationScreen() {
             lng: mockCoordinates.lng,
         });
 
-        router.push('/booking/dropoff-location');
+        router.push('/booking/item-details');
     };
 
     return (
@@ -56,15 +55,15 @@ export default function PickupLocationScreen() {
                 {/* Info Card */}
                 <Card className="mb-6">
                     <CardContent className="flex-row items-start py-4">
-                        <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-                            <MapPin size={20} color="#1E3A8A" />
+                        <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center mr-3">
+                            <MapPin size={20} color="#10B981" />
                         </View>
                         <View className="flex-1">
                             <Text className="text-sm font-semibold text-foreground mb-1">
-                                Pickup Location
+                                Dropoff Location
                             </Text>
                             <Text className="text-xs text-muted-foreground">
-                                Enter the address where we should pick up your items
+                                Where should we deliver your items?
                             </Text>
                         </View>
                     </CardContent>
@@ -73,8 +72,8 @@ export default function PickupLocationScreen() {
                 {/* Form */}
                 <View className="space-y-4">
                     <Input
-                        label="Pickup Address"
-                        placeholder="Enter complete address with landmarks"
+                        label="Dropoff Address"
+                        placeholder="Enter complete delivery address"
                         value={address}
                         onChangeText={setAddress}
                         multiline
@@ -84,8 +83,8 @@ export default function PickupLocationScreen() {
                     />
 
                     <Input
-                        label="Contact Person Name"
-                        placeholder="Who will hand over the items?"
+                        label="Recipient Name"
+                        placeholder="Who will receive the items?"
                         value={contactName}
                         onChangeText={setContactName}
                         error={errors.contactName}
@@ -93,8 +92,8 @@ export default function PickupLocationScreen() {
                     />
 
                     <Input
-                        label="Contact Phone Number"
-                        placeholder="Contact number for pickup"
+                        label="Recipient Phone"
+                        placeholder="Contact number for delivery"
                         value={contactPhone}
                         onChangeText={setContactPhone}
                         keyboardType="phone-pad"
@@ -107,7 +106,7 @@ export default function PickupLocationScreen() {
                         size="lg"
                     >
                         <Text className='text-background'>
-                            Continue to Dropoff
+                            Continue to Item Details
                         </Text>
                     </Button>
                 </View>
