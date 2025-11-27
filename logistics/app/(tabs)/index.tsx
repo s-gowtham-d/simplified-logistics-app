@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
-    SafeAreaView,
     ScrollView,
     TouchableOpacity,
-    Alert,
+    useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -15,13 +14,29 @@ import {
     Truck,
     Leaf,
     ChevronRight,
+    Zap,
+    Shield,
 } from 'lucide-react-native';
-import { Button, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import {
+    Button,
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+    CardFooter,
+    Badge,
+    Separator
+} from '@/components/ui';
 import { useAuthStore, useBookingStore } from '@/lib/store';
 import { vehiclesAPI } from '@/lib/api';
+import { Colors } from '@/constants/Colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
     const router = useRouter();
+    const colorScheme = useColorScheme();
+    const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
     const user = useAuthStore((state) => state.user);
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -34,7 +49,7 @@ export default function HomeScreen() {
         try {
             const response = await vehiclesAPI.getAll();
             console.log(response.data)
-            setVehicles(response?.data?.count > 0 && response.data?.results.slice(0, 3) || []); // Show top 3
+            setVehicles(response.data.results.slice(0, 3)); // Show top 3
         } catch (error) {
             console.error('Error fetching vehicles:', error);
         } finally {
@@ -48,74 +63,145 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                {/* Header */}
+            <ScrollView
+                className="flex-1"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 20 }}
+            >
+                {/* Header with Greeting */}
                 <View className="px-6 pt-6 pb-4">
                     <Text className="text-sm text-muted-foreground">Welcome back,</Text>
-                    <Text className="text-2xl font-bold text-foreground">
-                        {user?.first_name || 'User'}
+                    <Text className="text-3xl font-bold text-foreground mt-1">
+                        {user?.first_name || 'User'} 👋
                     </Text>
                 </View>
 
-                {/* Quick Booking Card */}
+                {/* Hero Booking Card */}
                 <View className="px-6 mb-6">
-                    <Card className="bg-gradient-to-br from-primary to-blue-700">
+                    <Card className="overflow-hidden">
+                        <View className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16" />
+                        <View className="absolute bottom-0 left-0 w-24 h-24 bg-primary/10 rounded-full -ml-12 -mb-12" />
+
                         <CardHeader>
                             <View className="flex-row items-center justify-between">
-                                <View className="flex-1">
-                                    <Text className="text-xl font-bold text-white mb-2">
+                                <View className="flex-1 z-10">
+                                    <CardTitle className="text-2xl mb-2">
                                         Book Your Delivery
-                                    </Text>
-                                    <Text className="text-sm text-blue-100">
+                                    </CardTitle>
+                                    <CardDescription className="text-base">
                                         Fast, reliable, and affordable logistics
-                                    </Text>
+                                    </CardDescription>
                                 </View>
-                                <View className="w-16 h-16 bg-white/20 rounded-full items-center justify-center">
-                                    <Truck size={32} color="#fff" />
+                                <View className="w-16 h-16 bg-primary/20 rounded-2xl items-center justify-center z-10">
+                                    <Truck size={32} color={theme.primary} />
                                 </View>
                             </View>
                         </CardHeader>
+
                         <CardContent>
+                            <View className="flex-row items-center mb-4">
+                                <View className="flex-row items-center mr-4">
+                                    <Zap size={16} color={theme.success} />
+                                    <Text className="text-xs text-muted-foreground ml-1">
+                                        30 min pickup
+                                    </Text>
+                                </View>
+                                <View className="flex-row items-center mr-4">
+                                    <Shield size={16} color={theme.success} />
+                                    <Text className="text-xs text-muted-foreground ml-1">
+                                        Insured delivery
+                                    </Text>
+                                </View>
+                                <View className="flex-row items-center">
+                                    <Leaf size={16} color={theme.success} />
+                                    <Text className="text-xs text-muted-foreground ml-1">
+                                        Green options
+                                    </Text>
+                                </View>
+                            </View>
+
                             <Button
                                 onPress={handleStartBooking}
-                                variant="secondary"
                                 size="lg"
-                                className="mt-4"
+                                className="shadow-lg"
                             >
-                                <Text className='text-white'>
+                                <Text className='text-background'>
 
-                                    Start Booking
+                                    Start New Booking
                                 </Text>
                             </Button>
                         </CardContent>
                     </Card>
                 </View>
 
-                {/* Features */}
+                {/* Quick Stats */}
                 <View className="px-6 mb-6">
-                    <Text className="text-lg font-bold text-foreground mb-4">
-                        Why Choose Us
-                    </Text>
+                    <View className="flex-row -mx-2">
+                        <View className="flex-1 px-2">
+                            <Card>
+                                <CardContent className="items-center py-4">
+                                    <Text className="text-2xl font-bold text-primary mb-1">15+</Text>
+                                    <Text className="text-xs text-muted-foreground text-center">
+                                        Vehicle Types
+                                    </Text>
+                                </CardContent>
+                            </Card>
+                        </View>
+                        <View className="flex-1 px-2">
+                            <Card>
+                                <CardContent className="items-center py-4">
+                                    <Text className="text-2xl font-bold text-green-600 mb-1">24/7</Text>
+                                    <Text className="text-xs text-muted-foreground text-center">
+                                        Support Available
+                                    </Text>
+                                </CardContent>
+                            </Card>
+                        </View>
+                        <View className="flex-1 px-2">
+                            <Card>
+                                <CardContent className="items-center py-4">
+                                    <Text className="text-2xl font-bold text-orange-600 mb-1">5k+</Text>
+                                    <Text className="text-xs text-muted-foreground text-center">
+                                        Happy Customers
+                                    </Text>
+                                </CardContent>
+                            </Card>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Features Grid */}
+                <View className="px-6 mb-6">
+                    <View className="flex-row items-center justify-between mb-4">
+                        <Text className="text-xl font-bold text-foreground">
+                            Why Choose Us
+                        </Text>
+                    </View>
+
                     <View className="flex-row flex-wrap -mx-2">
                         <FeatureCard
-                            icon={<Navigation size={24} color="#1E3A8A" />}
+                            icon={<Navigation size={24} color={theme.primary} />}
                             title="Real-time Tracking"
-                            description="Track your delivery live"
+                            description="Track your delivery live on map"
+                            theme={theme}
                         />
                         <FeatureCard
-                            icon={<Package size={24} color="#10B981" />}
+                            icon={<Package size={24} color={theme.success} />}
                             title="Safe Handling"
-                            description="Professional drivers"
+                            description="Professional & trained drivers"
+                            theme={theme}
                         />
                         <FeatureCard
-                            icon={<Leaf size={24} color="#10B981" />}
+                            icon={<Leaf size={24} color={theme.success} />}
                             title="Green Fleet"
-                            description="Eco-friendly options"
+                            description="Eco-friendly electric vehicles"
+                            theme={theme}
                         />
                         <FeatureCard
-                            icon={<Truck size={24} color="#F59E0B" />}
+                            icon={<Zap size={24} color={theme.warning} />}
                             title="Multiple Options"
-                            description="Fast, Economy, Helper"
+                            description="Fast, Economy, or Helper service"
+                            theme={theme}
                         />
                     </View>
                 </View>
@@ -123,27 +209,65 @@ export default function HomeScreen() {
                 {/* Available Vehicles */}
                 <View className="px-6 mb-6">
                     <View className="flex-row items-center justify-between mb-4">
-                        <Text className="text-lg font-bold text-foreground">
-                            Available Vehicles
-                        </Text>
+                        <View>
+                            <Text className="text-xl font-bold text-foreground">
+                                Popular Vehicles
+                            </Text>
+                            <Text className="text-sm text-muted-foreground mt-1">
+                                Choose the perfect fit for your needs
+                            </Text>
+                        </View>
                         <TouchableOpacity onPress={() => router.push('/vehicles/list')}>
                             <Text className="text-primary font-semibold">View All</Text>
                         </TouchableOpacity>
                     </View>
 
                     {loading ? (
-                        <Text className="text-muted-foreground">Loading vehicles...</Text>
+                        <Card>
+                            <CardContent className="py-8 items-center">
+                                <Text className="text-muted-foreground">Loading vehicles...</Text>
+                            </CardContent>
+                        </Card>
+                    ) : vehicles.length === 0 ? (
+                        <Card>
+                            <CardContent className="py-8 items-center">
+                                <Text className="text-muted-foreground">No vehicles available</Text>
+                            </CardContent>
+                        </Card>
                     ) : (
                         <View className="space-y-3">
-                            {vehicles.map((vehicle: any) => (
-                                <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                            {vehicles.map((vehicle: any, index: number) => (
+                                <VehicleCard
+                                    key={vehicle.id}
+                                    vehicle={vehicle}
+                                    theme={theme}
+                                    isLast={index === vehicles.length - 1}
+                                />
                             ))}
                         </View>
                     )}
                 </View>
 
-                {/* Bottom Spacing */}
-                <View className="h-8" />
+                {/* Promotional Banner */}
+                <View className="px-6 mb-6">
+                    <Card className="bg-gradient-to-r from-green-500 to-emerald-600 border-0">
+                        <CardContent className="py-6">
+                            <View className="flex-row items-center">
+                                <View className="w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4">
+                                    <Leaf size={24} color="#fff" />
+                                </View>
+                                <View className="flex-1">
+                                    <Text className="text-lg font-bold text-white mb-1">
+                                        Go Green, Save More!
+                                    </Text>
+                                    <Text className="text-sm text-white/90">
+                                        Get 5% off on all electric vehicle bookings
+                                    </Text>
+                                </View>
+                            </View>
+                        </CardContent>
+                    </Card>
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -153,59 +277,121 @@ function FeatureCard({
     icon,
     title,
     description,
+    theme,
 }: {
     icon: React.ReactNode;
     title: string;
     description: string;
+    theme: any;
 }) {
     return (
         <View className="w-1/2 p-2">
             <Card className="h-full">
-                <CardContent className="items-center py-4">
-                    <View className="w-12 h-12 bg-secondary rounded-full items-center justify-center mb-3">
-                        {icon}
+                <CardContent className="py-5">
+                    <View className="items-center">
+                        <View className="w-14 h-14 bg-secondary rounded-2xl items-center justify-center mb-3 shadow-sm">
+                            {icon}
+                        </View>
+                        <Text className="text-sm font-bold text-foreground text-center mb-1.5">
+                            {title}
+                        </Text>
+                        <Text className="text-xs text-muted-foreground text-center leading-4">
+                            {description}
+                        </Text>
                     </View>
-                    <Text className="text-sm font-semibold text-foreground text-center mb-1">
-                        {title}
-                    </Text>
-                    <Text className="text-xs text-muted-foreground text-center">
-                        {description}
-                    </Text>
                 </CardContent>
             </Card>
         </View>
     );
 }
 
-function VehicleCard({ vehicle }: { vehicle: any }) {
+function VehicleCard({
+    vehicle,
+    theme,
+    isLast
+}: {
+    vehicle: any;
+    theme: any;
+    isLast: boolean;
+}) {
+    const router = useRouter();
+
     return (
-        <Card>
-            <CardContent className="flex-row items-center py-4">
-                <View className="w-16 h-16 bg-secondary rounded-xl items-center justify-center mr-4">
-                    <Truck size={32} color="#1E3A8A" />
-                </View>
-                <View className="flex-1">
+        <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+                // Navigate to vehicle details or booking
+                router.push('/booking/pickup-location');
+            }}
+        >
+            <Card>
+                <CardContent className="py-4">
                     <View className="flex-row items-center">
-                        <Text className="text-base font-bold text-foreground">
-                            {vehicle.vehicle_name}
-                        </Text>
-                        {vehicle.is_electric && (
-                            <View className="ml-2 bg-green-100 px-2 py-0.5 rounded-full">
-                                <Text className="text-xs text-green-700 font-semibold">
-                                    Electric
+                        {/* Vehicle Icon */}
+                        <View className="w-20 h-20 bg-primary/10 rounded-2xl items-center justify-center mr-4 shadow-sm">
+                            <Truck size={36} color={theme.primary} />
+                        </View>
+
+                        {/* Vehicle Details */}
+                        <View className="flex-1">
+                            <View className="flex-row items-center mb-2">
+                                <Text className="text-base font-bold text-foreground">
+                                    {vehicle.vehicle_name}
+                                </Text>
+                                {vehicle.is_electric && (
+                                    <Badge variant="default" className="ml-2">
+                                        <View className="flex-row items-center">
+                                            <Leaf size={10} color="#fff" />
+                                            <Text className="text-[10px] text-white font-bold ml-1">
+                                                Electric
+                                            </Text>
+                                        </View>
+                                    </Badge>
+                                )}
+                            </View>
+
+                            <Text className="text-xs text-muted-foreground mb-2">
+                                {vehicle.vehicle_type.replace('_', ' ').toUpperCase()}
+                            </Text>
+
+                            <View className="flex-row items-center mb-2">
+                                <View className="flex-row items-center">
+                                    <Package size={12} color={theme.textSecondary} />
+                                    <Text className="text-xs text-muted-foreground ml-1">
+                                        {vehicle.capacity_kg}kg
+                                    </Text>
+                                </View>
+                                <Text className="text-xs text-muted-foreground mx-2">•</Text>
+                                <Text className="text-xs text-muted-foreground">
+                                    {vehicle.dimensions}
                                 </Text>
                             </View>
-                        )}
+
+                            <View className="flex-row items-center">
+                                <Text className="text-sm font-bold text-primary">
+                                    ₹{vehicle.base_price}
+                                </Text>
+                                <Text className="text-xs text-muted-foreground ml-1">
+                                    base
+                                </Text>
+                                <Text className="text-xs text-muted-foreground mx-1">+</Text>
+                                <Text className="text-xs font-semibold text-muted-foreground">
+                                    ₹{vehicle.per_km_price}/km
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Arrow Icon */}
+                        <ChevronRight size={20} color={theme.textSecondary} />
                     </View>
-                    <Text className="text-sm text-muted-foreground mt-1">
-                        Capacity: {vehicle.capacity_kg}kg • {vehicle.dimensions}
-                    </Text>
-                    <Text className="text-sm font-semibold text-primary mt-1">
-                        ₹{vehicle.base_price} base + ₹{vehicle.per_km_price}/km
-                    </Text>
-                </View>
-                <ChevronRight size={20} color="#9CA3AF" />
-            </CardContent>
-        </Card>
+                </CardContent>
+
+                {!isLast && (
+                    <View className="px-4">
+                        <Separator />
+                    </View>
+                )}
+            </Card>
+        </TouchableOpacity>
     );
 }
