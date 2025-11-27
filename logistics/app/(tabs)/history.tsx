@@ -195,7 +195,7 @@ function HistoryBookingCard({ booking, onPress }: { booking: any; onPress: () =>
                             <View className="flex-row items-center mb-2">
                                 <CardTitle className="text-base">Booking #{booking.id}</CardTitle>
                                 <Badge
-                                    variant={isCompleted ? 'success' : 'destructive'}
+                                    variant={isCompleted ? 'default' : 'destructive'}
                                     className="ml-3"
                                 >
                                     <Text className="text-white text-xs font-semibold">

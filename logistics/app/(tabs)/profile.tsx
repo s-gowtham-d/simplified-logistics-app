@@ -127,7 +127,7 @@ export default function ProfileScreen() {
                                         <CardTitle className="ml-2">Subscription</CardTitle>
                                     </View>
                                     {subscription && (
-                                        <Badge variant="success">
+                                        <Badge variant="default">
                                             <Text className="text-white text-xs font-semibold">
                                                 ACTIVE
                                             </Text>
