@@ -158,10 +158,10 @@ function BookingCard({ booking, onPress }: { booking: any; onPress: () => void }
                             <View className="flex-row items-center mb-2">
                                 <CardTitle className="text-base">Booking #{booking.id}</CardTitle>
                                 <Badge
-                                    variant={STATUS_COLORS[booking.status]}
+                                    variant="default"
                                     className="ml-3"
                                 >
-                                    <Text className="text-foreground">
+                                    <Text className="text-white">
                                         {STATUS_LABELS[booking.status]}
                                     </Text>
                                 </Badge>

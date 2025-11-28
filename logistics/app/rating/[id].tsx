@@ -147,7 +147,9 @@ export default function RatingScreen() {
                         disabled={rating === 0}
                         size="lg"
                     >
-                        Submit Rating
+                        <Text className="text-background font-semibold">
+                            Submit Rating
+                        </Text>
                     </Button>
 
                     {/* Skip */}

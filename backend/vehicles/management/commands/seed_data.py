@@ -1,18 +1,21 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth import get_user_model
-from vehicles.models import Vehicle, Driver
-from subscriptions.models import SubscriptionPlan
+from django.utils.crypto import get_random_string
 from decimal import Decimal
 
-User = get_user_model()
+from accounts.models import User
+from vehicles.models import Vehicle, Driver
+from subscriptions.models import SubscriptionPlan
+
 
 class Command(BaseCommand):
-    help = 'Seed database with initial data'
+    help = "Seed the database with initial vehicles, subscription plans, and demo drivers"
 
     def handle(self, *args, **kwargs):
-        self.stdout.write('Seeding database...')
-        
-        # Create vehicles
+        self.stdout.write("🚀 Starting database seed...")
+
+        # ===============================
+        # 1. VEHICLES
+        # ===============================
         vehicles_data = [
             {
                 'vehicle_type': 'bike',
@@ -55,16 +58,17 @@ class Command(BaseCommand):
                 'is_electric': True,
             },
         ]
-        
+
         for data in vehicles_data:
             vehicle, created = Vehicle.objects.get_or_create(
-                vehicle_number=data['vehicle_number'],
-                defaults=data
+                vehicle_number=data["vehicle_number"], defaults=data
             )
             if created:
-                self.stdout.write(f'Created vehicle: {vehicle.vehicle_name}')
-        
-        # Create subscription plans
+                self.stdout.write(f"✔ Created Vehicle: {vehicle.vehicle_name}")
+
+        # ===============================
+        # 2. SUBSCRIPTION PLANS
+        # ===============================
         plans_data = [
             {
                 'name': 'Basic Monthly',
@@ -91,12 +95,95 @@ class Command(BaseCommand):
                 'dedicated_account_manager': True,
             },
         ]
+
         for data in plans_data:
             plan, created = SubscriptionPlan.objects.get_or_create(
-                name=data['name'],
-                defaults=data
+                name=data["name"], defaults=data
             )
             if created:
-                self.stdout.write(f'Created plan: {plan.name}')
-        
-        self.stdout.write(self.style.SUCCESS('Database seeded successfully!'))
+                self.stdout.write(f"✔ Created Subscription Plan: {plan.name}")
+
+        # ===============================
+        # 3. DEMO DRIVERS
+        # ===============================
+        driver_users = [
+            {
+                "username": "driver1",
+                "first_name": "Ravi",
+                "last_name": "Kumar",
+                "email": "driver1@example.com",
+                "phone_number": "9000000001"
+            },
+            {
+                "username": "driver2",
+                "first_name": "Suresh",
+                "last_name": "M",
+                "email": "driver2@example.com",
+                "phone_number": "9000000002"
+            },
+            {
+                "username": "driver3",
+                "first_name": "Arun",
+                "last_name": "Nair",
+                "email": "driver3@example.com",
+                "phone_number": "9000000003"
+            },
+            {
+                "username": "driver4",
+                "first_name": "Mohammad",
+                "last_name": "Ali",
+                "email": "driver4@example.com",
+                "phone_number": "9000000004"
+            },
+        ]
+
+        vehicle_map = {
+            "bike": Vehicle.objects.filter(vehicle_type="bike").first(),
+            "mini_truck": Vehicle.objects.filter(vehicle_type="mini_truck").first(),
+            "truck": Vehicle.objects.filter(vehicle_type="truck").first(),
+            "tempo": Vehicle.objects.filter(vehicle_type="tempo").first(),
+        }
+
+        driver_vehicle_assignment = ["bike", "mini_truck", "truck", "tempo"]
+
+        for i, driver_data in enumerate(driver_users):
+            username = driver_data["username"]
+
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    "first_name": driver_data["first_name"],
+                    "last_name": driver_data["last_name"],
+                    "email": driver_data["email"],
+                    "phone_number": driver_data["phone_number"],
+                    "user_type": "driver",
+                }
+            )
+
+            if created:
+                user.set_password("password123")
+                user.save()
+                self.stdout.write(f"✔ Created Driver User: {username}")
+
+            assigned_vehicle_type = driver_vehicle_assignment[i]
+            assigned_vehicle = vehicle_map[assigned_vehicle_type]
+
+            driver, created_driver = Driver.objects.get_or_create(
+                user=user,
+                defaults={
+                    "vehicle": assigned_vehicle,
+                    "license_number": f"LIC{get_random_string(6)}",
+                    "rating": Decimal("4.50"),
+                    "total_trips": 10,
+                    "is_available": True,
+                    "current_lat": Decimal("12.971600"),
+                    "current_lng": Decimal("77.594600"),
+                }
+            )
+
+            if created_driver:
+                self.stdout.write(
+                    f"✔ Created Driver Profile: {username} → {assigned_vehicle.vehicle_type}"
+                )
+
+        self.stdout.write(self.style.SUCCESS("🎉 Database seed completed successfully!"))

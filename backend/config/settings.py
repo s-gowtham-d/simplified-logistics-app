@@ -156,6 +156,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:19000",  # Expo
     "http://localhost:8081",   # React Native
+    "http://localhost:8082",   # React Native
     "http://localhost:3000",   # Web debugging
 ]
 

@@ -6,14 +6,15 @@ import {
     Platform,
     ScrollView,
     Alert,
+    TouchableOpacity,
     Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Truck } from 'lucide-react-native';
-import { Button, Input } from '@/components/ui';
+import { Truck, User, Building, Check } from 'lucide-react-native';
+import { Button, Input, Card, CardContent } from '@/components/ui';
 import { authAPI } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RegisterScreen() {
     const router = useRouter();
@@ -28,6 +29,8 @@ export default function RegisterScreen() {
         password: '',
         password_confirm: '',
         user_type: 'customer',
+        company_name: '',
+        gst_number: '',
     });
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<any>({});
@@ -45,6 +48,11 @@ export default function RegisterScreen() {
             newErrors.password_confirm = 'Passwords do not match';
         }
 
+        // Business validation
+        if (formData.user_type === 'business') {
+            if (!formData.company_name) newErrors.company_name = 'Company name is required for business accounts';
+        }
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
@@ -54,7 +62,14 @@ export default function RegisterScreen() {
         setErrors({});
 
         try {
-            const response = await authAPI.register(formData);
+            // Only send company fields if business user
+            const registrationData = {
+                ...formData,
+                company_name: formData.user_type === 'business' ? formData.company_name : undefined,
+                gst_number: formData.user_type === 'business' ? formData.gst_number : undefined,
+            };
+
+            const response = await authAPI.register(registrationData);
 
             const { user, tokens } = response.data;
             await setAuth(user, tokens.access, tokens.refresh);
@@ -66,7 +81,6 @@ export default function RegisterScreen() {
             const errorData = error.response?.data;
 
             if (errorData) {
-                // Set field-specific errors
                 setErrors(errorData);
                 Alert.alert('Registration Failed', 'Please check the form and try again.');
             } else {
@@ -78,19 +92,13 @@ export default function RegisterScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+        <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                className="flex-1"
             >
                 <ScrollView
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        paddingHorizontal: 20,
-                        paddingBottom: 40
-
-                    }}
+                    contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
@@ -100,10 +108,75 @@ export default function RegisterScreen() {
                             <Truck size={32} color="#fff" />
                         </View>
                         <Text className="text-2xl font-bold text-foreground">Create Account</Text>
+                        <Text className="text-sm text-muted-foreground mt-1">
+                            Join Porter Logistics today
+                        </Text>
+                    </View>
+
+                    {/* User Type Selection */}
+                    <View className="mb-6">
+                        <Text className="text-sm font-semibold text-foreground mb-3">
+                            Account Type
+                        </Text>
+                        <View className="flex-row gap-3">
+                            <TouchableOpacity
+                                onPress={() => setFormData({ ...formData, user_type: 'customer' })}
+                                activeOpacity={0.7}
+                                className="flex-1"
+                            >
+                                <Card className={formData.user_type === 'customer' ? 'border-primary border-2' : ''}>
+                                    <CardContent className="items-center py-4">
+                                        <View className="w-12 h-12 bg-primary/10 rounded-xl items-center justify-center mb-2">
+                                            <User size={24} color="#1E3A8A" />
+                                        </View>
+                                        <Text className="text-sm font-semibold text-foreground mb-1">
+                                            Personal
+                                        </Text>
+                                        <Text className="text-xs text-muted-foreground text-center">
+                                            For individual use
+                                        </Text>
+                                        {formData.user_type === 'customer' && (
+                                            <View className="absolute top-2 right-2">
+                                                <View className="w-6 h-6 bg-primary rounded-full items-center justify-center">
+                                                    <Check size={14} color="#fff" />
+                                                </View>
+                                            </View>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => setFormData({ ...formData, user_type: 'business' })}
+                                activeOpacity={0.7}
+                                className="flex-1"
+                            >
+                                <Card className={formData.user_type === 'business' ? 'border-primary border-2' : ''}>
+                                    <CardContent className="items-center py-4">
+                                        <View className="w-12 h-12 bg-green-100 rounded-xl items-center justify-center mb-2">
+                                            <Building size={24} color="#10B981" />
+                                        </View>
+                                        <Text className="text-sm font-semibold text-foreground mb-1">
+                                            Business
+                                        </Text>
+                                        <Text className="text-xs text-muted-foreground text-center">
+                                            For companies
+                                        </Text>
+                                        {formData.user_type === 'business' && (
+                                            <View className="absolute top-2 right-2">
+                                                <View className="w-6 h-6 bg-primary rounded-full items-center justify-center">
+                                                    <Check size={14} color="#fff" />
+                                                </View>
+                                            </View>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     {/* Register Form */}
-                    <View className="space-y-4">
+                    <View>
                         <Input
                             label="Username"
                             placeholder="Choose a username"
@@ -113,23 +186,25 @@ export default function RegisterScreen() {
                             className="mb-4"
                         />
 
-                        <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
-                            <Input
-                                label="First Name"
-                                placeholder="John"
-                                value={formData.first_name}
-                                onChangeText={(text) => setFormData({ ...formData, first_name: text })}
-                                error={errors.first_name?.[0]}
-                                className="flex-1"
-                            />
-                            <Input
-                                label="Last Name"
-                                placeholder="Doe"
-                                value={formData.last_name}
-                                onChangeText={(text) => setFormData({ ...formData, last_name: text })}
-                                error={errors.last_name?.[0]}
-                                className="flex-1"
-                            />
+                        <View className="flex-row gap-4 mb-4">
+                            <View className="flex-1">
+                                <Input
+                                    label="First Name"
+                                    placeholder="John"
+                                    value={formData.first_name}
+                                    onChangeText={(text) => setFormData({ ...formData, first_name: text })}
+                                    error={errors.first_name?.[0]}
+                                />
+                            </View>
+                            <View className="flex-1">
+                                <Input
+                                    label="Last Name"
+                                    placeholder="Doe"
+                                    value={formData.last_name}
+                                    onChangeText={(text) => setFormData({ ...formData, last_name: text })}
+                                    error={errors.last_name?.[0]}
+                                />
+                            </View>
                         </View>
 
                         <Input
@@ -151,6 +226,35 @@ export default function RegisterScreen() {
                             error={errors.phone_number?.[0]}
                             className="mb-4"
                         />
+
+                        {/* Business Fields */}
+                        {formData.user_type === 'business' && (
+                            <>
+                                <View className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <Text className="text-xs text-blue-700">
+                                        ℹ️ Business accounts get access to subscriptions, analytics, and bulk booking features
+                                    </Text>
+                                </View>
+
+                                <Input
+                                    label="Company Name *"
+                                    placeholder="Your Company Name"
+                                    value={formData.company_name}
+                                    onChangeText={(text) => setFormData({ ...formData, company_name: text })}
+                                    error={errors.company_name?.[0]}
+                                    className="mb-4"
+                                />
+
+                                <Input
+                                    label="GST Number (Optional)"
+                                    placeholder="22AAAAA0000A1Z5"
+                                    value={formData.gst_number}
+                                    onChangeText={(text) => setFormData({ ...formData, gst_number: text })}
+                                    error={errors.gst_number?.[0]}
+                                    className="mb-4"
+                                />
+                            </>
+                        )}
 
                         <Input
                             label="Password"
@@ -178,8 +282,7 @@ export default function RegisterScreen() {
                             size="lg"
                             className="mb-4"
                         >
-                            <Text className='text-background'>
-
+                            <Text className="text-white font-semibold">
                                 Create Account
                             </Text>
                         </Button>
@@ -189,10 +292,11 @@ export default function RegisterScreen() {
                                 Already have an account?{' '}
                             </Text>
                             <Pressable
+
                                 onPress={() => router.push('/(auth)/login')}
                                 className="px-1"
                             >
-                                <Text className="text-foreground p-0 m-0">
+                                <Text className="text-muted-foreground">
 
                                     Login
                                 </Text>

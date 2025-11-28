@@ -85,8 +85,8 @@ export default function HomeScreen() {
         <SafeAreaView className="flex-1 bg-background">
             <ScrollView
                 className="flex-1"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 20 }}
+            // showsVerticalScrollIndicator={false}
+            // contentContainerStyle={{ paddingBottom: 20 }}
             >
                 {/* Header with Greeting */}
                 <View className="px-6 pt-6 pb-4">
@@ -299,7 +299,7 @@ export default function HomeScreen() {
 
                 {/* Promotional Banner */}
                 <View className="px-6 mb-6">
-                    <Card className="bg-gradient-to-r from-green-500 to-emerald-600 border-0">
+                    <Card className="bg-emerald-600 border-0">
                         <CardContent className="py-6">
                             <View className="flex-row items-center">
                                 <View className="w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4">
@@ -436,11 +436,11 @@ function VehicleCard({
                     </View>
                 </CardContent>
 
-                {!isLast && (
+                {/* {!isLast && (
                     <View className="px-4">
                         <Separator />
                     </View>
-                )}
+                )} */}
             </Card>
         </TouchableOpacity>
     );

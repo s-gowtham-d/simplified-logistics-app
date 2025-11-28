@@ -45,6 +45,7 @@ export default function AnalyticsScreen() {
     const fetchAnalytics = async () => {
         try {
             const response = await subscriptionsAPI.getAnalytics();
+            console.log(response.data)
             setAnalytics(response.data);
         } catch (error: any) {
             console.error('Error fetching analytics:', error);
@@ -77,6 +78,17 @@ export default function AnalyticsScreen() {
             </SafeAreaView>
         );
     }
+
+    const safePercent = (num: number, den: number) => {
+        if (!den || den === 0) return "0.0%";
+        return `${((num / den) * 100).toFixed(1)}%`;
+    };
+
+    const safeAvg = (num: number, den: number) => {
+        if (!den || den === 0) return "₹0.00";
+        return `₹${(num / den).toFixed(2)}`;
+    };
+
 
     const { subscription, analytics: data } = analytics;
 
@@ -238,20 +250,24 @@ export default function AnalyticsScreen() {
                         </CardHeader>
                         <CardContent>
                             <View className="space-y-3">
+
                                 <StatRow
                                     label="Completion Rate"
-                                    value={`${((data.completed_bookings / data.total_bookings) * 100).toFixed(1)}%`}
+                                    value={safePercent(data.completed_bookings, data.total_bookings)}
                                 />
+
                                 <StatRow
                                     label="Cancellation Rate"
-                                    value={`${((data.cancelled_bookings / data.total_bookings) * 100).toFixed(1)}%`}
+                                    value={safePercent(data.cancelled_bookings, data.total_bookings)}
                                 />
+
                                 <StatRow
                                     label="Average per Booking"
-                                    value={`₹${(data.total_spent / data.total_bookings).toFixed(2)}`}
+                                    value={safeAvg(data.total_spent, data.total_bookings)}
                                 />
                             </View>
                         </CardContent>
+
                     </Card>
 
                     {/* Manage Subscription */}
@@ -260,7 +276,9 @@ export default function AnalyticsScreen() {
                         size="lg"
                         onPress={() => router.push('/subscription/plans')}
                     >
-                        Manage Subscription
+                        <Text className="text-primary font-semibold">
+                            Manage Subscription
+                        </Text>
                     </Button>
                 </View>
             </ScrollView>
