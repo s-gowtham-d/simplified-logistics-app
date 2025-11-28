@@ -21,6 +21,7 @@ import {
     ChevronRight,
     Award,
     Leaf,
+    BarChart3,
 } from 'lucide-react-native';
 import {
     Card,
@@ -116,6 +117,51 @@ export default function ProfileScreen() {
                     </Card>
                 </View>
 
+                {/* Quick Actions */}
+                <View className="px-6 mb-6">
+                    <Text className="text-sm font-semibold text-muted-foreground mb-3">
+                        QUICK ACTIONS
+                    </Text>
+                    <View className="flex-row -mx-2">
+                        <View className="flex-1 px-2">
+                            <TouchableOpacity
+                                onPress={() => router.push('/subscription/plans')}
+                                activeOpacity={0.7}
+                            >
+                                <Card>
+                                    <CardContent className="items-center py-4">
+                                        <View className="w-12 h-12 bg-primary/10 rounded-xl items-center justify-center mb-2">
+                                            <Award size={24} color="#1E3A8A" />
+                                        </View>
+                                        <Text className="text-xs font-semibold text-foreground text-center">
+                                            Subscriptions
+                                        </Text>
+                                    </CardContent>
+                                </Card>
+                            </TouchableOpacity>
+                        </View>
+                        {subscription && (
+                            <View className="flex-1 px-2">
+                                <TouchableOpacity
+                                    onPress={() => router.push('/subscription/analytics')}
+                                    activeOpacity={0.7}
+                                >
+                                    <Card>
+                                        <CardContent className="items-center py-4">
+                                            <View className="w-12 h-12 bg-green-100 rounded-xl items-center justify-center mb-2">
+                                                <BarChart3 size={24} color="#10B981" />
+                                            </View>
+                                            <Text className="text-xs font-semibold text-foreground text-center">
+                                                Analytics
+                                            </Text>
+                                        </CardContent>
+                                    </Card>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                </View>
+
                 {/* Subscription Card */}
                 {user?.user_type === 'business' && (
                     <View className="px-6 mb-6">
@@ -157,13 +203,24 @@ export default function ProfileScreen() {
                                                 {subscription.bookings_remaining} bookings
                                             </Text>
                                         </View>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onPress={() => router.push('/subscription/analytics')}
-                                        >
-                                            View Analytics
-                                        </Button>
+                                        <View className="flex-row gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onPress={() => router.push('/subscription/analytics')}
+                                                className="flex-1"
+                                            >
+                                                <Text className="text-primary text-xs font-semibold">Analytics</Text>
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onPress={() => router.push('/subscription/plans')}
+                                                className="flex-1"
+                                            >
+                                                <Text className="text-primary text-xs font-semibold">Manage</Text>
+                                            </Button>
+                                        </View>
                                     </View>
                                 ) : (
                                     <View>
@@ -174,7 +231,7 @@ export default function ProfileScreen() {
                                             onPress={() => router.push('/subscription/plans')}
                                             size="sm"
                                         >
-                                            View Plans
+                                            <Text className="text-white font-semibold">View Plans</Text>
                                         </Button>
                                     </View>
                                 )}
@@ -259,7 +316,7 @@ export default function ProfileScreen() {
                             <SettingsItem
                                 icon={<HelpCircle size={20} color="#6B7280" />}
                                 label="Help & Support"
-                                onPress={() => Alert.alert('Support', 'Contact gowthamselvam809@gmail.com')}
+                                onPress={() => Alert.alert('Support', 'Contact support@porter.com')}
                             />
                         </CardContent>
                     </Card>
@@ -284,15 +341,13 @@ export default function ProfileScreen() {
                 {/* App Version */}
                 <View className="items-center mb-4">
                     <Text className="text-xs text-muted-foreground">
-                        Logistics v1.0.0
+                        Porter Logistics v1.0.0
                     </Text>
                 </View>
-            </ScrollView >
-        </SafeAreaView >
+            </ScrollView>
+        </SafeAreaView>
     );
 }
-
-
 
 function ProfileItem({
     icon,
@@ -315,6 +370,7 @@ function ProfileItem({
         </View>
     );
 }
+
 function SettingsItem({
     icon,
     label,

@@ -16,6 +16,7 @@ import {
     ChevronRight,
     Zap,
     Shield,
+    Award,
 } from 'lucide-react-native';
 import {
     Button,
@@ -29,7 +30,7 @@ import {
     Separator
 } from '@/components/ui';
 import { useAuthStore, useBookingStore } from '@/lib/store';
-import { vehiclesAPI } from '@/lib/api';
+import { subscriptionsAPI, vehiclesAPI } from '@/lib/api';
 import { Colors } from '@/constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -40,12 +41,28 @@ export default function HomeScreen() {
     const user = useAuthStore((state) => state.user);
     const [vehicles, setVehicles] = useState([]);
     const [vehiclesCount, setVehiclesCount] = useState(0);
+    const [subscription, setSubscription] = useState<any>(null);
 
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchVehicles();
+        fetchSubscription();
     }, []);
+
+    const fetchSubscription = async () => {
+        if (user?.user_type === 'business') {
+            try {
+                const response = await subscriptionsAPI.getActive();
+                if (response.data.subscription) {
+                    setSubscription(response.data.subscription);
+                }
+            } catch (error) {
+                console.error('Error fetching subscription:', error);
+            }
+        }
+    };
+
 
     const fetchVehicles = async () => {
         try {
@@ -136,6 +153,35 @@ export default function HomeScreen() {
                         </CardContent>
                     </Card>
                 </View>
+
+                {/* Subscription Banner for Business Users */}
+                {user?.user_type === 'business' && !subscription && (
+                    <View className="px-6 mb-6">
+                        <TouchableOpacity
+                            onPress={() => router.push('/subscription/plans')}
+                            activeOpacity={0.7}
+                        >
+                            <Card className="border-primary">
+                                <CardContent className="py-4">
+                                    <View className="flex-row items-center">
+                                        <View className="w-12 h-12 bg-primary/10 rounded-xl items-center justify-center mr-3">
+                                            <Award size={24} color="#1E3A8A" />
+                                        </View>
+                                        <View className="flex-1">
+                                            <Text className="text-base font-bold text-foreground mb-1">
+                                                Upgrade to Business Plan
+                                            </Text>
+                                            <Text className="text-xs text-muted-foreground">
+                                                Save up to 15% with subscriptions • Get analytics
+                                            </Text>
+                                        </View>
+                                        <ChevronRight size={20} color="#9CA3AF" />
+                                    </View>
+                                </CardContent>
+                            </Card>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
                 {/* Quick Stats */}
                 <View className="px-6 mb-6">

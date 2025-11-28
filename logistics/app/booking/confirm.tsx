@@ -15,6 +15,7 @@ import {
     User,
     Phone,
     Check,
+    Award,
 } from 'lucide-react-native';
 import {
     Button,
@@ -317,6 +318,30 @@ export default function ConfirmBookingScreen() {
                             </View>
                         </CardContent>
                     </Card>
+
+                    {/* Subscription Savings Notice */}
+                    {user?.user_type === 'business' && (
+                        <Card className="mb-6 bg-blue-50 border-blue-200">
+                            <CardContent className="py-4 flex-row items-center">
+                                <Award size={20} color="#3B82F6" />
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-sm font-semibold text-blue-900 mb-1">
+                                        Business User?
+                                    </Text>
+                                    <Text className="text-xs text-blue-700">
+                                        Subscribe to save up to 15% on this and future bookings
+                                    </Text>
+                                </View>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onPress={() => router.push('/subscription/plans')}
+                                >
+                                    <Text className="text-primary text-xs font-semibold">View Plans</Text>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Confirm Button */}
                     <Button onPress={handleConfirmBooking} loading={loading} size="lg">

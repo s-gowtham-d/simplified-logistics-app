@@ -56,7 +56,7 @@ export default function SubscriptionPlansScreen() {
     const fetchPlans = async () => {
         try {
             const response = await subscriptionsAPI.getPlans();
-            setPlans(response.data);
+            setPlans(response.data.results);
         } catch (error) {
             console.error('Error fetching plans:', error);
             Alert.alert('Error', 'Failed to load subscription plans');
@@ -142,7 +142,7 @@ export default function SubscriptionPlansScreen() {
             >
                 <View className="px-6 py-6">
                     {/* Benefits Banner */}
-                    <Card className="mb-6 bg-gradient-to-r from-primary to-blue-600 border-0">
+                    <Card className="mb-6 bg-primary border-0">
                         <CardContent className="py-6">
                             <View className="flex-row items-center mb-3">
                                 <Award size={24} color="#fff" />
@@ -254,9 +254,11 @@ export default function SubscriptionPlansScreen() {
                                             disabled={subscribing}
                                             loading={subscribing && selectedPlan?.id === plan.id}
                                         >
-                                            {subscribing && selectedPlan?.id === plan.id
-                                                ? 'Processing...'
-                                                : 'Subscribe Now'}
+                                            <Text className="text-white font-semibold">
+                                                {subscribing && selectedPlan?.id === plan.id
+                                                    ? 'Processing...'
+                                                    : 'Subscribe Now'}
+                                            </Text>
                                         </Button>
                                     </CardContent>
                                 </Card>
